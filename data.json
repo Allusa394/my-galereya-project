@@ -1,0 +1,108 @@
+{
+  "gallery": {
+    "name": "Галерея",
+    "whatsapp": "79000000000",
+    "telegram": "gallery_art",
+    "tagline": "Авторские картины маслом"
+  },
+  "artists": [
+    {
+      "id": "artist-1",
+      "name": "Художник 1",
+      "photoUrl": "https://picsum.photos/seed/artist1/400/400",
+      "bio": "Пейзажист, работает в технике масла более 15 лет."
+    },
+    {
+      "id": "artist-2",
+      "name": "Художник 2",
+      "photoUrl": "https://picsum.photos/seed/artist2/400/400",
+      "bio": "Мастер натюрморта и городских зарисовок."
+    },
+    {
+      "id": "artist-3",
+      "name": "Художник 3",
+      "photoUrl": "https://picsum.photos/seed/artist3/400/400",
+      "bio": "Работает со светом и атмосферой. Каждая картина — история момента."
+    }
+  ],
+  "paintings": [
+    {
+      "id": "p01",
+      "title": "Осенний пейзаж",
+      "artist": "artist-1",
+      "artistLabel": "Художник 1",
+      "technique": "Масло, холст",
+      "width": 80,
+      "height": 60,
+      "price": 25000,
+      "imageUrl": "https://picsum.photos/seed/p01/600/750",
+      "wa": "79000000001",
+      "tg": "username1"
+    },
+    {
+      "id": "p02",
+      "title": "Вечерний берег",
+      "artist": "artist-1",
+      "artistLabel": "Художник 1",
+      "technique": "Масло, холст",
+      "width": 100,
+      "height": 70,
+      "price": 38000,
+      "imageUrl": "https://picsum.photos/seed/p02/600/750",
+      "wa": "79000000001",
+      "tg": "username1"
+    },
+    {
+      "id": "p03",
+      "title": "Белые цветы",
+      "artist": "artist-2",
+      "artistLabel": "Художник 2",
+      "technique": "Масло, холст",
+      "width": 60,
+      "height": 60,
+      "price": 18000,
+      "imageUrl": "https://picsum.photos/seed/p03/600/750",
+      "wa": "79000000002",
+      "tg": "username2"
+    },
+    {
+      "id": "p04",
+      "title": "Городской мотив",
+      "artist": "artist-2",
+      "artistLabel": "Художник 2",
+      "technique": "Масло, холст",
+      "width": 120,
+      "height": 80,
+      "price": 0,
+      "imageUrl": "https://picsum.photos/seed/p04/600/750",
+      "wa": "79000000002",
+      "tg": "username2"
+    },
+    {
+      "id": "p05",
+      "title": "Утренний свет",
+      "artist": "artist-3",
+      "artistLabel": "Художник 3",
+      "technique": "Масло, холст",
+      "width": 90,
+      "height": 70,
+      "price": 55000,
+      "imageUrl": "https://picsum.photos/seed/p05/600/750",
+      "wa": "79000000003",
+      "tg": "username3"
+    },
+    {
+      "id": "p06",
+      "title": "Глубина",
+      "artist": "artist-3",
+      "artistLabel": "Художник 3",
+      "technique": "Масло, холст",
+      "width": 150,
+      "height": 100,
+      "price": 0,
+      "imageUrl": "https://picsum.photos/seed/p06/600/750",
+      "wa": "79000000003",
+      "tg": "username3"
+    }
+  ]
+}

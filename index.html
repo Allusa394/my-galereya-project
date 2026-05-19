@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Галерея — Авторские картины маслом</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #F3EBE2;
+      --bg-dark:      #1A1A1A;
+      --text:         #1A1A1A;
+      --text-sec:     #3D3D3D;
+      --text-inv:     #FFFFFF;
+      --border:       #C5BEB6;
+      --accent:       #D4916E;
+      --font-head:    'Playfair Display', serif;
+      --font-body:    'Inter', sans-serif;
+      --r-btn:        4px;
+      --r-card:       4px;
+      --pad-section:  80px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.6;
+      padding-top: 64px;
+    }
+
+    img { display: block; max-width: 100%; }
+
+    /* ── NAV ── */
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 40px;
+      justify-content: space-between;
+    }
+
+    .nav__logo {
+      font-family: var(--font-head);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+    }
+
+    .nav__links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav__links a {
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+
+    .nav__links a:hover { color: var(--accent); }
+
+    /* ── HERO ── */
+    .hero {
+      background: var(--bg-dark);
+      color: var(--text-inv);
+      padding: 120px 40px 100px;
+      min-height: 600px;
+      display: flex;
+      align-items: center;
+    }
+
+    .hero__inner { max-width: 760px; }
+
+    .hero__eyebrow {
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 24px;
+    }
+
+    .hero__title {
+      font-family: var(--font-head);
+      font-size: 64px;
+      font-weight: 700;
+      line-height: 1.12;
+      margin-bottom: 24px;
+    }
+
+    .hero__subtitle {
+      font-size: 18px;
+      color: rgba(255,255,255,0.7);
+      max-width: 520px;
+      margin-bottom: 40px;
+      line-height: 1.7;
+    }
+
+    /* ── SHARED BUTTONS ── */
+    .btn {
+      display: inline-block;
+      padding: 14px 32px;
+      border-radius: var(--r-btn);
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.2s;
+      border: none;
+    }
+
+    .btn:hover { opacity: 0.85; }
+
+    .btn--accent {
+      background: var(--accent);
+      color: var(--text-inv);
+    }
+
+    .btn--outline {
+      background: transparent;
+      color: var(--text);
+      border: 1.5px solid var(--text);
+    }
+
+    .btn--outline-inv {
+      background: transparent;
+      color: var(--text-inv);
+      border: 1.5px solid var(--text-inv);
+    }
+
+    /* ── SECTIONS shared ── */
+    .section { padding: var(--pad-section) 40px; }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    .section__title {
+      font-family: var(--font-head);
+      font-size: 40px;
+      font-weight: 700;
+      margin-bottom: 40px;
+    }
+
+    /* ── FILTER ── */
+    .filter-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 8px 20px;
+      border-radius: 40px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      background: transparent;
+      color: var(--text);
+      border: 1.5px solid var(--border);
+    }
+
+    .filter-btn--active {
+      background: var(--text);
+      color: var(--text-inv);
+      border-color: var(--text);
+    }
+
+    /* ── CARDS GRID ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    /* ── PAINTING CARD ── */
+    .card {
+      background: #fff;
+      border-radius: var(--r-card);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card__image {
+      width: 100%;
+      aspect-ratio: 4/5;
+      object-fit: cover;
+      display: block;
+    }
+
+    .card__body {
+      padding: 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card__artist {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .card__title {
+      font-family: var(--font-head);
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 1.3;
+    }
+
+    .card__meta {
+      font-size: 14px;
+      color: var(--text-sec);
+      margin-top: 4px;
+    }
+
+    .card__price {
+      font-size: 16px;
+      font-weight: 600;
+      margin-top: auto;
+      padding-top: 8px;
+    }
+
+    .card__actions {
+      display: flex;
+      gap: 8px;
+      padding: 16px 20px 20px;
+    }
+
+    .card__actions .btn {
+      flex: 1;
+      text-align: center;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    /* ── WALL TRYOUT ── */
+    .tryout {
+      background: var(--bg-dark);
+      color: var(--text-inv);
+      padding: var(--pad-section) 40px;
+    }
+
+    .tryout__inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .tryout__label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+
+    .tryout__title {
+      font-family: var(--font-head);
+      font-size: 40px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 20px;
+    }
+
+    .tryout__text {
+      font-size: 16px;
+      color: rgba(255,255,255,0.65);
+      line-height: 1.75;
+      margin-bottom: 32px;
+    }
+
+    .tryout__steps {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .tryout__steps li {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      font-size: 15px;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .tryout__steps li span.step-num {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+
+    .tryout__canvas-placeholder {
+      background: rgba(255,255,255,0.04);
+      border: 2px dashed rgba(255,255,255,0.15);
+      border-radius: 8px;
+      min-height: 340px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: rgba(255,255,255,0.4);
+      font-size: 14px;
+      text-align: center;
+      padding: 32px;
+    }
+
+    #tryoutCanvas {
+      width: 100%;
+      border-radius: 8px;
+      display: none;
+      cursor: grab;
+    }
+
+    #tryoutCanvas:active { cursor: grabbing; }
+
+    .tryout__selected-painting {
+      margin-bottom: 14px;
+      padding: 10px 16px;
+      background: rgba(212,145,110,0.15);
+      border: 1px solid rgba(212,145,110,0.35);
+      border-radius: 4px;
+      font-size: 14px;
+      color: var(--accent);
+      display: none;
+    }
+
+    .tryout__controls {
+      display: none;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .tryout__controls .btn { padding: 8px 16px; font-size: 13px; }
+
+    /* ── FRAME SELECTOR ── */
+    .frame-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 8px;
+    }
+
+    .frame-selector {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .frame-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 40px;
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: transparent;
+      color: rgba(255,255,255,0.6);
+      border: 1.5px solid rgba(255,255,255,0.18);
+    }
+
+    .frame-btn:hover { border-color: rgba(255,255,255,0.4); color: #fff; }
+
+    .frame-btn--active {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      border-color: rgba(255,255,255,0.5);
+    }
+
+    .frame-swatch {
+      width: 11px;
+      height: 11px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* ── ARTISTS ── */
+    .artists { padding: var(--pad-section) 40px; }
+
+    .artists__inner { max-width: 1200px; margin: 0 auto; }
+
+    .artists__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+      margin-top: 40px;
+    }
+
+    .artist-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .artist-card__photo {
+      width: 100%;
+      aspect-ratio: 1/1;
+      object-fit: cover;
+      border-radius: 4px;
+      filter: grayscale(15%);
+    }
+
+    .artist-card__name {
+      font-family: var(--font-head);
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .artist-card__bio {
+      font-size: 15px;
+      color: var(--text-sec);
+      line-height: 1.75;
+    }
+
+    /* ── FOOTER ── */
+    .footer {
+      background: var(--accent);
+      color: var(--text-inv);
+      padding: 60px 40px;
+    }
+
+    .footer__inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+
+    .footer__logo {
+      font-family: var(--font-head);
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-inv);
+      text-decoration: none;
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    .footer__tagline {
+      font-size: 14px;
+      opacity: 0.75;
+      max-width: 260px;
+      line-height: 1.65;
+    }
+
+    .footer__cta-title {
+      font-family: var(--font-head);
+      font-size: 22px;
+      margin-bottom: 16px;
+      line-height: 1.3;
+    }
+
+    .footer__links {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .footer__links a {
+      color: var(--text-inv);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 600;
+      opacity: 0.9;
+      transition: opacity 0.2s;
+    }
+
+    .footer__links a:hover { opacity: 1; }
+
+    .footer__copy {
+      max-width: 1200px;
+      margin: 40px auto 0;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.25);
+      font-size: 12px;
+      opacity: 0.6;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── MOBILE ── */
+    @media (max-width: 768px) {
+      :root { --pad-section: 48px; }
+
+      .nav { padding: 0 20px; }
+      .nav__links { gap: 16px; }
+      .nav__links a { font-size: 12px; }
+
+      .hero { padding: 80px 20px 60px; }
+      .hero__title { font-size: 38px; }
+      .hero__subtitle { font-size: 16px; }
+
+      .section { padding: var(--pad-section) 20px; }
+      .section__title { font-size: 28px; }
+
+      .cards-grid { grid-template-columns: 1fr; }
+
+      .tryout { padding: var(--pad-section) 20px; }
+      .tryout__inner { grid-template-columns: 1fr; gap: 40px; }
+      .tryout__title { font-size: 28px; }
+
+      .artists__grid { grid-template-columns: 1fr; gap: 32px; }
+
+      .footer { padding: 48px 20px; }
+      .footer__inner { flex-direction: column; gap: 32px; }
+    }
+
+    @media (max-width: 480px) {
+      .nav__links { display: none; }
+      .hero__title { font-size: 30px; }
+    }
+
+    /* ── LOADING ── */
+    .loading-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-sec);
+      font-size: 15px;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="#" class="nav__logo">Галерея</a>
+  <ul class="nav__links">
+    <li><a href="#catalog">Каталог</a></li>
+    <li><a href="#artists">Художники</a></li>
+    <li><a href="#tryout">Примерка</a></li>
+    <li><a href="#contact">Контакт</a></li>
+  </ul>
+</nav>
+
+<section class="hero">
+  <div class="hero__inner">
+    <p class="hero__eyebrow">Авторские работы маслом</p>
+    <h1 class="hero__title">Картина, которая<br>станет частью<br>вашего дома</h1>
+    <p class="hero__subtitle">Шесть оригинальных работ трёх художников. Примерьте на своей стене — прежде чем принять решение.</p>
+    <a href="#catalog" class="btn btn--accent">Смотреть каталог</a>
+  </div>
+</section>
+
+<section id="catalog" class="section">
+  <div class="container">
+    <h2 class="section__title">Каталог работ</h2>
+
+    <div class="filter-bar">
+      <button class="filter-btn filter-btn--active" data-filter="all">Все работы</button>
+      <button class="filter-btn" data-filter="artist-1">Художник 1</button>
+      <button class="filter-btn" data-filter="artist-2">Художник 2</button>
+      <button class="filter-btn" data-filter="artist-3">Художник 3</button>
+    </div>
+
+    <div class="cards-grid" id="cardsGrid">
+      <div class="loading-state"><div class="spinner"></div>Загружаем картины…</div>
+    </div>
+  </div>
+</section>
+
+<section id="tryout" class="tryout">
+  <div class="tryout__inner">
+    <div>
+      <p class="tryout__label">Примерка на вашей стене</p>
+      <h2 class="tryout__title">Как будет смотреться<br>картина у вас?</h2>
+      <p class="tryout__text">Загрузите фото своей стены и посмотрите, как картина впишется в ваш интерьер.</p>
+      <ol class="tryout__steps">
+        <li><span class="step-num">1</span><span>Нажмите «Примерить» на любой карточке выше</span></li>
+        <li><span class="step-num">2</span><span>Загрузите фото своей стены</span></li>
+        <li><span class="step-num">3</span><span>Перетащите картину в нужное место</span></li>
+      </ol>
+      <a href="#catalog" class="btn btn--outline-inv">Выбрать картину</a>
+    </div>
+    <div>
+      <div id="tryoutSelectedInfo" class="tryout__selected-painting"></div>
+      <div id="tryoutPlaceholder" class="tryout__canvas-placeholder">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+        <span>Выберите картину из каталога,<br>затем загрузите фото стены</span>
+      </div>
+      <canvas id="tryoutCanvas"></canvas>
+      <div id="tryoutControls" class="tryout__controls">
+        <label class="btn btn--outline-inv" style="cursor:pointer">
+          Загрузить фото стены
+          <input type="file" id="wallPhotoInput" accept="image/*" style="display:none">
+        </label>
+        <button class="btn btn--outline-inv" id="sizeUp">+ Больше</button>
+        <button class="btn btn--outline-inv" id="sizeDown">– Меньше</button>
+        <button class="btn btn--accent" id="saveResult">Скачать</button>
+      </div>
+      <div id="frameSelectorWrap" style="display:none;margin-top:16px">
+        <p class="frame-label">Выбор рамы</p>
+        <div class="frame-selector">
+          <button class="frame-btn frame-btn--active" data-frame="none">Без рамы</button>
+          <button class="frame-btn" data-frame="black">
+            <span class="frame-swatch" style="background:#1a1a1a;border:1px solid #555"></span>Чёрная
+          </button>
+          <button class="frame-btn" data-frame="gold">
+            <span class="frame-swatch" style="background:linear-gradient(135deg,#c9a84c,#f0d878)"></span>Золото
+          </button>
+          <button class="frame-btn" data-frame="white">
+            <span class="frame-swatch" style="background:#f0ede8;border:1px solid #b0aca6"></span>Белая
+          </button>
+          <button class="frame-btn" data-frame="wood">
+            <span class="frame-swatch" style="background:#8b5e3c"></span>Дерево
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="artists" class="artists">
+  <div class="artists__inner">
+    <h2 class="section__title">Художники</h2>
+    <div class="artists__grid" id="artistsGrid"></div>
+  </div>
+</section>
+
+<footer id="contact" class="footer">
+  <div class="footer__inner">
+    <div>
+      <a href="#" class="footer__logo">Галерея</a>
+      <p class="footer__tagline">Авторские картины маслом. Москва.</p>
+    </div>
+    <div>
+      <p class="footer__cta-title">Есть вопросы?<br>Напишите нам</p>
+      <div class="footer__links">
+        <a href="https://wa.me/79000000000?text=Здравствуйте%2C+интересует+ваша+галерея" target="_blank" rel="noopener">WhatsApp</a>
+        <a href="https://t.me/username?text=Здравствуйте%2C+интересует+ваша+галерея" target="_blank" rel="noopener">Telegram</a>
+      </div>
+    </div>
+  </div>
+  <p class="footer__copy">© 2026 Галерея. Все права защищены.</p>
+</footer>
+
+<script>
+  // ══════════════════════════════════════════
+  //  ИСТОЧНИК ДАННЫХ
+  //  'json'   → data.json  (обновить: написать Claude)
+  //  'sheets' → Google Sheets CSV (обновить: самостоятельно в таблице)
+  // ══════════════════════════════════════════
+  const DATA_SOURCE = 'sheets';
+  // Вариант A: data.json → написать Claude чтобы обновить
+  // Вариант B: Google Sheets → обновлять самостоятельно в таблице
+  const SHEETS_BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTU3Bnk-aod6ZcUcHhWZWxGsILWRXi_Hci93uZOU01x_Ll_0CZ0avboStXDGaQSWyGTrBtZ11If5hts/pub?output=csv';
+  const SHEETS_PAINTINGS_GID = '1804990058';
+  const SHEETS_ARTISTS_GID  = '1863760401';
+
+  let paintings = [];
+
+  // Парсер CSV для Google Sheets (обрабатывает кавычки и запятые внутри полей)
+  function parseCSV(csv) {
+    const lines = csv.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());
+    return lines.slice(1).filter(l => l.trim()).map(line => {
+      const values = [];
+      let cur = '', inQ = false;
+      for (const ch of line) {
+        if (ch === '"') { inQ = !inQ; }
+        else if (ch === ',' && !inQ) { values.push(cur.trim()); cur = ''; }
+        else { cur += ch; }
+      }
+      values.push(cur.trim());
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = (values[i] || '').replace(/^"|"$/g, ''); });
+      return obj;
+    });
+  }
+
+  function renderArtists(artists) {
+    const grid = document.getElementById('artistsGrid');
+    if (!grid || !artists || !artists.length) return;
+    grid.innerHTML = artists.map(a => `
+      <div class="artist-card">
+        <img class="artist-card__photo" src="${a.photoUrl}" alt="${a.name}" loading="lazy">
+        <h3 class="artist-card__name">${a.name}</h3>
+        <p class="artist-card__bio">${a.bio}</p>
+      </div>
+    `).join('');
+  }
+
+  async function loadData() {
+    const grid = document.getElementById('cardsGrid');
+    grid.innerHTML = '<div class="loading-state"><div class="spinner"></div>Загружаем картины…</div>';
+    try {
+      if (DATA_SOURCE === 'sheets' && SHEETS_BASE_URL) {
+        const [pr, ar] = await Promise.all([
+          fetch(SHEETS_BASE_URL + '&gid=' + SHEETS_PAINTINGS_GID),
+          fetch(SHEETS_BASE_URL + '&gid=' + SHEETS_ARTISTS_GID)
+        ]);
+        const pRows = parseCSV(await pr.text());
+        const aRows = parseCSV(await ar.text());
+        paintings = pRows.map(r => ({
+          id: r.id, title: r.title, artist: r.artist, artistLabel: r.artistLabel,
+          technique: r.technique, width: Number(r.width), height: Number(r.height),
+          price: Number(r.price), image: r.imageUrl, wa: r.wa, tg: r.tg
+        }));
+        renderArtists(aRows);
+      } else {
+        const res = await fetch('data.json');
+        const data = await res.json();
+        paintings = data.paintings.map(p => ({ ...p, image: p.imageUrl }));
+        renderArtists(data.artists);
+      }
+      renderCatalog('all');
+    } catch (err) {
+      grid.innerHTML = '<div class="loading-state">Не удалось загрузить данные. Обновите страницу.</div>';
+      console.error('loadData:', err);
+    }
+  }
+
+  function formatPrice(price) {
+    if (!price) return 'Цена по запросу';
+    return price.toLocaleString('ru-RU') + ' ₽';
+  }
+
+  function buildContactUrl(p) {
+    const msg = encodeURIComponent('Здравствуйте, интересует картина «' + p.title + '»');
+    if (p.tg) return 'https://t.me/' + p.tg + '?text=' + msg;
+    return 'https://wa.me/' + p.wa + '?text=' + msg;
+  }
+
+  function renderCatalog(filter) {
+    const grid = document.getElementById('cardsGrid');
+    const list = filter === 'all' ? paintings : paintings.filter(p => p.artist === filter);
+
+    grid.innerHTML = list.map(p => `
+      <div class="card" data-artist="${p.artist}">
+        <img class="card__image" src="${p.image}" alt="${p.title}" loading="lazy">
+        <div class="card__body">
+          <span class="card__artist">${p.artistLabel}</span>
+          <h3 class="card__title">${p.title}</h3>
+          <p class="card__meta">${p.width}×${p.height} см · ${p.technique}</p>
+          <p class="card__price">${formatPrice(p.price)}</p>
+        </div>
+        <div class="card__actions">
+          <button class="btn btn--outline" onclick="selectPaintingForTryout(paintings.find(x=>x.id==='${p.id}'));document.getElementById('tryout').scrollIntoView({behavior:'smooth'})">Примерить</button>
+          <a href="${buildContactUrl(p)}" target="_blank" rel="noopener" class="btn btn--accent">Написать</a>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  loadData();
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('filter-btn--active'));
+      btn.classList.add('filter-btn--active');
+      renderCatalog(btn.dataset.filter);
+    });
+  });
+
+  // ── WALL TRYOUT (Canvas) ──
+  const FRAMES = {
+    none:  { fw: 0 },
+    black: { fw: 14, base: '#1f1f1f', outer: '#0a0a0a', high: '#3a3a3a', inn: '#111' },
+    gold:  { fw: 22, base: '#c9a84c', outer: '#7a5c1e', high: '#f0d878', inn: '#a07830' },
+    white: { fw: 16, base: '#f0ede8', outer: '#a8a49e', high: '#ffffff', inn: '#ccc9c4' },
+    wood:  { fw: 18, base: '#8b5e3c', outer: '#3d2008', high: '#c49a6c', inn: '#5c3a1e' },
+  };
+
+  let tryoutPainting = null;
+  let wallImg = null;
+  let currentFrame = 'none';
+  const canvas = document.getElementById('tryoutCanvas');
+  const ctx = canvas.getContext('2d');
+  let paintX = 60, paintY = 60, paintW = 200;
+  let dragging = false, dragOffX = 0, dragOffY = 0;
+  let paintImgCache = null;
+
+  function drawFrameRect(x, y, w, h, style) {
+    if (style === 'none') return;
+    const f = FRAMES[style];
+    const fw = f.fw;
+    const bevel = Math.max(2, Math.floor(fw * 0.28));
+
+    // Drop shadow
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetX = 4;
+    ctx.shadowOffsetY = 4;
+    ctx.fillStyle = f.base;
+    ctx.fillRect(x - fw, y - fw, w + fw * 2, h + fw * 2);
+    ctx.restore();
+
+    // Base frame fill
+    ctx.fillStyle = f.base;
+    ctx.fillRect(x - fw, y - fw, w + fw * 2, h + fw * 2);
+
+    // Outer edge
+    ctx.strokeStyle = f.outer;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x - fw + 1, y - fw + 1, w + fw * 2 - 2, h + fw * 2 - 2);
+
+    // Bevel highlight — top & left
+    ctx.strokeStyle = f.high;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x - fw + bevel, y - fw + bevel);
+    ctx.lineTo(x + w + fw - bevel, y - fw + bevel);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - fw + bevel, y - fw + bevel);
+    ctx.lineTo(x - fw + bevel, y + h + fw - bevel);
+    ctx.stroke();
+
+    // Bevel shadow — bottom & right
+    ctx.strokeStyle = f.inn;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x - fw + bevel, y + h + fw - bevel);
+    ctx.lineTo(x + w + fw - bevel, y + h + fw - bevel);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + w + fw - bevel, y - fw + bevel);
+    ctx.lineTo(x + w + fw - bevel, y + h + fw - bevel);
+    ctx.stroke();
+
+    // Inner edge (rabbet line)
+    ctx.strokeStyle = f.outer;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x - 1, y - 1, w + 2, h + 2);
+  }
+
+  function selectPaintingForTryout(p) {
+    tryoutPainting = p;
+    paintImgCache = null;
+    paintX = 60; paintY = 60; paintW = 200;
+    document.getElementById('tryoutSelectedInfo').style.display = 'block';
+    document.getElementById('tryoutSelectedInfo').textContent =
+      'Выбрана: ' + p.title + ' (' + p.width + '×' + p.height + ' см)';
+    document.getElementById('tryoutControls').style.display = 'flex';
+    document.getElementById('frameSelectorWrap').style.display = 'block';
+    if (wallImg) drawCanvas();
+  }
+
+  function drawCanvas() {
+    if (!wallImg) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(wallImg, 0, 0, canvas.width, canvas.height);
+    if (!tryoutPainting) return;
+
+    function doDraw(img) {
+      const ratio = img.naturalHeight / img.naturalWidth;
+      const pH = paintW * ratio;
+      drawFrameRect(paintX, paintY, paintW, pH, currentFrame);
+      ctx.drawImage(img, paintX, paintY, paintW, pH);
+      if (currentFrame === 'none') {
+        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(paintX, paintY, paintW, pH);
+      }
+    }
+
+    if (paintImgCache) {
+      doDraw(paintImgCache);
+    } else {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => { paintImgCache = img; doDraw(img); };
+      img.src = tryoutPainting.image;
+    }
+  }
+
+  function getPaintH() {
+    if (!paintImgCache || !tryoutPainting) return paintW;
+    return paintW * (paintImgCache.naturalHeight / paintImgCache.naturalWidth);
+  }
+
+  // Frame button events
+  document.querySelectorAll('.frame-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.frame-btn').forEach(b => b.classList.remove('frame-btn--active'));
+      btn.classList.add('frame-btn--active');
+      currentFrame = btn.dataset.frame;
+      drawCanvas();
+    });
+  });
+
+  document.getElementById('wallPhotoInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const img = new Image();
+      img.onload = function() {
+        wallImg = img;
+        canvas.width = 800;
+        canvas.height = Math.round(800 * img.naturalHeight / img.naturalWidth);
+        document.getElementById('tryoutPlaceholder').style.display = 'none';
+        canvas.style.display = 'block';
+        drawCanvas();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('sizeUp').addEventListener('click', () => {
+    paintW = Math.min(paintW + 30, canvas.width - paintX);
+    drawCanvas();
+  });
+
+  document.getElementById('sizeDown').addEventListener('click', () => {
+    paintW = Math.max(paintW - 30, 60);
+    drawCanvas();
+  });
+
+  document.getElementById('saveResult').addEventListener('click', () => {
+    const link = document.createElement('a');
+    link.download = 'примерка-картины.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+
+  canvas.addEventListener('mousedown', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scale = canvas.width / rect.width;
+    const mx = (e.clientX - rect.left) * scale;
+    const my = (e.clientY - rect.top) * scale;
+    const pH = getPaintH();
+    const fw = FRAMES[currentFrame].fw;
+    if (mx >= paintX - fw && mx <= paintX + paintW + fw &&
+        my >= paintY - fw && my <= paintY + pH + fw) {
+      dragging = true; dragOffX = mx - paintX; dragOffY = my - paintY;
+    }
+  });
+
+  canvas.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const rect = canvas.getBoundingClientRect();
+    const scale = canvas.width / rect.width;
+    paintX = (e.clientX - rect.left) * scale - dragOffX;
+    paintY = (e.clientY - rect.top) * scale - dragOffY;
+    drawCanvas();
+  });
+
+  canvas.addEventListener('mouseup', () => { dragging = false; });
+  canvas.addEventListener('mouseleave', () => { dragging = false; });
+
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const t = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const scale = canvas.width / rect.width;
+    const mx = (t.clientX - rect.left) * scale;
+    const my = (t.clientY - rect.top) * scale;
+    const pH = getPaintH();
+    const fw = FRAMES[currentFrame].fw;
+    if (mx >= paintX - fw && mx <= paintX + paintW + fw &&
+        my >= paintY - fw && my <= paintY + pH + fw) {
+      dragging = true; dragOffX = mx - paintX; dragOffY = my - paintY;
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const scale = canvas.width / rect.width;
+    paintX = (t.clientX - rect.left) * scale - dragOffX;
+    paintY = (t.clientY - rect.top) * scale - dragOffY;
+    drawCanvas();
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', () => { dragging = false; });
+</script>
+
+</body>
+</html>

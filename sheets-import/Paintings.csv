@@ -1,0 +1,7 @@
+id,title,artist,artistLabel,technique,width,height,price,imageUrl,wa,tg
+p01,Осенний пейзаж,artist-1,Художник 1,Масло холст,80,60,25000,https://picsum.photos/seed/p01/600/750,79000000001,username1
+p02,Вечерний берег,artist-1,Художник 1,Масло холст,100,70,38000,https://picsum.photos/seed/p02/600/750,79000000001,username1
+p03,Белые цветы,artist-2,Художник 2,Масло холст,60,60,18000,https://picsum.photos/seed/p03/600/750,79000000002,username2
+p04,Городской мотив,artist-2,Художник 2,Масло холст,120,80,0,https://picsum.photos/seed/p04/600/750,79000000002,username2
+p05,Утренний свет,artist-3,Художник 3,Масло холст,90,70,55000,https://picsum.photos/seed/p05/600/750,79000000003,username3
+p06,Глубина,artist-3,Художник 3,Масло холст,150,100,0,https://picsum.photos/seed/p06/600/750,79000000003,username3
