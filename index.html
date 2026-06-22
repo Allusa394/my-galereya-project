@@ -611,7 +611,7 @@
 
     /* ── TILES ── */
     .tiles {
-      padding: 24px 40px 32px;
+      padding: 20px 32px 28px;
       background: var(--bg);
       border-bottom: 1px solid var(--border);
     }
@@ -620,14 +620,14 @@
       margin: 0 auto;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
+      gap: 12px;
     }
     .tile {
       background: #fff;
       border: 1px solid var(--border);
       border-top: 2px solid var(--accent);
-      border-radius: var(--r-card);
-      padding: 28px 16px 24px;
+      border-radius: 18px;
+      padding: 20px 12px 16px;
       text-align: center;
       text-decoration: none;
       color: var(--text);
@@ -636,7 +636,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       font-family: var(--font-body);
       font-size: inherit;
       min-width: 0;
@@ -646,25 +646,28 @@
       transform: translateY(-2px);
     }
     .tile__icon-wrap {
-      width: 48px;
-      height: 48px;
+      width: 40px;
+      height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--accent);
     }
     .tile__icon-wrap svg {
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 24px;
     }
-    .tile__title { font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.2; }
-    .tile__desc { font-size: 11px; color: var(--text-sec); letter-spacing: 0.04em; }
+    .tile__title { font-family: var(--font-head); font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.2; }
+    .tile__desc { font-size: 10px; color: var(--text-sec); letter-spacing: 0.04em; }
     @media (max-width: 768px) {
-      .tiles { padding: 16px 16px 20px; }
-      .tiles__inner { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-      .tile { padding: 24px 12px 20px; gap: 8px; }
-      .tile__icon-wrap { width: 40px; height: 40px; }
-      .tile__icon-wrap svg { width: 24px; height: 24px; }
+      .hero { display: none; }
+      .tiles { padding: 12px 12px 14px; }
+      .tiles__inner { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .tile { padding: 16px 10px 14px; gap: 6px; border-radius: 16px; }
+      .tile__icon-wrap { width: 34px; height: 34px; }
+      .tile__icon-wrap svg { width: 20px; height: 20px; }
+      .tile__title { font-size: 13px; }
+      .tile__desc { font-size: 10px; }
     }
 
     /* ── SOLD BADGE ── */
