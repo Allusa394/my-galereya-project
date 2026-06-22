@@ -623,16 +623,15 @@
       gap: 12px;
     }
     .tile {
-      background: #fff;
-      border: 1px solid var(--border);
-      border-top: 2px solid var(--accent);
+      background: var(--accent);
+      border: none;
       border-radius: 18px;
       padding: 20px 12px 16px;
       text-align: center;
       text-decoration: none;
-      color: var(--text);
+      color: #fff;
       cursor: pointer;
-      transition: box-shadow 0.2s, transform 0.15s;
+      transition: opacity 0.2s, transform 0.15s;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -642,7 +641,7 @@
       min-width: 0;
     }
     .tile:hover {
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      opacity: 0.88;
       transform: translateY(-2px);
     }
     .tile__icon-wrap {
@@ -651,19 +650,15 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--accent);
+      color: #fff;
     }
     .tile__icon-wrap svg {
       width: 24px;
       height: 24px;
     }
-    .tile__title { font-family: var(--font-head); font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.2; }
-    .tile__desc { font-size: 10px; color: var(--text-sec); letter-spacing: 0.04em; }
+    .tile__title { font-family: var(--font-body); font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 0.05em; text-transform: uppercase; line-height: 1.2; }
+    .tile__desc { font-size: 10px; color: rgba(255,255,255,0.8); letter-spacing: 0.04em; }
     @media (max-width: 768px) {
-      .hero { padding: 36px 20px 32px; min-height: unset; }
-      .hero__title { font-size: 28px; margin-bottom: 14px; }
-      .hero__subtitle { font-size: 14px; margin-bottom: 20px; }
-      .hero__eyebrow { margin-bottom: 12px; }
       .tiles { padding: 12px 12px 14px; }
       .tiles__inner { grid-template-columns: repeat(2, 1fr); gap: 8px; }
       .tile { padding: 16px 10px 14px; gap: 6px; border-radius: 16px; }
@@ -671,6 +666,24 @@
       .tile__icon-wrap svg { width: 20px; height: 20px; }
       .tile__title { font-size: 13px; }
       .tile__desc { font-size: 10px; }
+    }
+
+    /* ── TAGLINE BAR ── */
+    .tagline-bar {
+      background: var(--bg);
+      padding: 14px 32px 18px;
+      text-align: center;
+    }
+    .tagline-bar__text {
+      font-family: var(--font-body);
+      font-size: 13px;
+      color: var(--text-sec);
+      letter-spacing: 0.04em;
+      margin: 0;
+    }
+    @media (max-width: 768px) {
+      .tagline-bar { padding: 10px 16px 14px; }
+      .tagline-bar__text { font-size: 12px; }
     }
 
     /* ── SOLD BADGE ── */
@@ -1006,14 +1019,9 @@
   </div>
 </div>
 
-<section class="hero">
-  <div class="hero__inner">
-    <p class="hero__eyebrow">Авторские работы маслом</p>
-    <h1 class="hero__title">Картина, которая<br>станет частью<br>вашего дома</h1>
-    <p class="hero__subtitle">Авторские работы художников, которые можно примерить в ваш интерьер.</p>
-    <a href="#catalog" class="btn btn--accent">Смотреть каталог</a>
-  </div>
-</section>
+<div class="tagline-bar">
+  <p class="tagline-bar__text">Авторские картины маслом — примерьте на свою стену</p>
+</div>
 
 <section id="catalog" class="section">
   <div class="container">
