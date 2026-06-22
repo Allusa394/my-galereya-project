@@ -1,3 +1,6 @@
 chat-history/
 .claude/
 *.log
+
+.vercel
+.env
