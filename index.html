@@ -245,6 +245,14 @@
       margin-top: 4px;
     }
 
+    .card__desc {
+      font-size: 13px;
+      color: var(--text-sec);
+      line-height: 1.6;
+      margin-top: 6px;
+      font-style: italic;
+    }
+
     .card__price {
       font-size: 16px;
       font-weight: 600;
@@ -932,7 +940,7 @@
 <body>
 
 <nav class="nav">
-  <a href="#" class="nav__logo">Галерея ПРИМАВЕРА</a>
+  <a href="#" class="nav__logo">Галерея ПРИМАVERA</a>
   <ul class="nav__links">
     <li><a href="#catalog">Каталог</a></li>
     <li><a href="#artists">Художники</a></li>
@@ -1072,7 +1080,7 @@
 <footer id="contact" class="footer">
   <div class="footer__inner">
     <div>
-      <a href="#" class="footer__logo">Галерея ПРИМАВЕРА</a>
+      <a href="#" class="footer__logo">Галерея ПРИМАVERA</a>
       <p class="footer__tagline">Авторские картины маслом</p>
     </div>
     <div>
@@ -1085,7 +1093,7 @@
       </div>
     </div>
   </div>
-  <p class="footer__copy">© 2026 Галерея ПРИМАВЕРА. Все права защищены.</p>
+  <p class="footer__copy">© 2026 Галерея ПРИМАVERA. Все права защищены.</p>
 </footer>
 
 <div class="lightbox-overlay" id="lightbox" onclick="if(event.target.id==='lightbox')closeLightbox()">
@@ -1238,11 +1246,11 @@
   function sharePainting(p) {
     const text = '🎨 Смотри какая картина — «' + p.title + '»\n' +
       p.width + '×' + p.height + ' см, ' + p.technique + '\n' +
-      formatPrice(p.price) + '\nГалерея ПРИМАВЕРА';
+      formatPrice(p.price) + '\nГалерея ПРИМАVERA';
     const url = 'https://t.me/primavera_gallery_bot';
 
     if (navigator.share) {
-      navigator.share({ title: 'Галерея ПРИМАВЕРА', text: text + '\n' + url }).catch(() => {});
+      navigator.share({ title: 'Галерея ПРИМАVERA', text: text + '\n' + url }).catch(() => {});
       return;
     }
 
@@ -1365,6 +1373,7 @@
           <div class="card__body">
             <span class="card__artist">${p.artistLabel}</span>
             <h3 class="card__title">${p.title}</h3>
+            ${p.description ? `<p class="card__desc">${p.description}</p>` : ''}
             <p class="card__meta">${p.year ? p.year + ', ' : ''}${p.width}×${p.height} см, ${p.technique}</p>
             <p class="card__price">${p.sold ? '<span style="color:var(--text-sec);font-weight:400">Продана</span>' : formatPrice(p.price)}</p>
             ${p.sold ? '' : '<p class="card__delivery">🚚 Доставка СДЭК за счёт покупателя</p>'}
