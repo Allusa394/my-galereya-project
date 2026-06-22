@@ -209,11 +209,18 @@
       flex-direction: column;
     }
 
+    .card__image-tap {
+      display: block;
+      cursor: zoom-in;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
     .card__image {
       width: 100%;
       aspect-ratio: 4/5;
       object-fit: cover;
       display: block;
+      pointer-events: none;
     }
 
     .card__body {
@@ -1309,7 +1316,9 @@
     const grid = document.getElementById('artistModalGrid');
     grid.innerHTML = artistPaintings.map(p => `
       <div class="card">
-        <img class="card__image" src="${p.image}" alt="${p.title}" loading="lazy" onclick="openLightbox('${p.image}','${p.title.replace(/'/g,"&#39;")}')" style="cursor:zoom-in">
+        <div class="card__image-tap" onclick="openLightbox('${p.image}','${p.title.replace(/'/g,"&#39;")}')">
+          <img class="card__image" src="${p.image}" alt="${p.title}" loading="lazy">
+        </div>
         <div class="card__body">
           <h3 class="card__title">${p.title}</h3>
           <p class="card__meta">${p.year ? p.year + ', ' : ''}${p.width}×${p.height} см, ${p.technique}</p>
@@ -1387,7 +1396,9 @@
       return `
         <div class="card" data-artist="${p.artist}">
           ${soldOverlay}
-          <img class="card__image" src="${p.image}" alt="${p.title}" loading="lazy" onclick="openLightbox('${p.image}','${p.title.replace(/'/g,"&#39;")}')" style="cursor:zoom-in${p.sold ? ';filter:grayscale(40%)' : ''}">
+          <div class="card__image-tap" onclick="openLightbox('${p.image}','${p.title.replace(/'/g,"&#39;")}')">
+            <img class="card__image" src="${p.image}" alt="${p.title}" loading="lazy" style="${p.sold ? 'filter:grayscale(40%)' : ''}">
+          </div>
           <div class="card__body">
             <span class="card__artist">${p.artistLabel}</span>
             <h3 class="card__title">${p.title}</h3>
