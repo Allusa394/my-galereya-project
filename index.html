@@ -932,7 +932,7 @@
 <body>
 
 <nav class="nav">
-  <a href="#" class="nav__logo">Галерея Primavera</a>
+  <a href="#" class="nav__logo">Галерея ПРИМАВЕРА</a>
   <ul class="nav__links">
     <li><a href="#catalog">Каталог</a></li>
     <li><a href="#artists">Художники</a></li>
@@ -1072,7 +1072,7 @@
 <footer id="contact" class="footer">
   <div class="footer__inner">
     <div>
-      <a href="#" class="footer__logo">Галерея Primavera</a>
+      <a href="#" class="footer__logo">Галерея ПРИМАВЕРА</a>
       <p class="footer__tagline">Авторские картины маслом</p>
     </div>
     <div>
@@ -1085,7 +1085,7 @@
       </div>
     </div>
   </div>
-  <p class="footer__copy">© 2026 Галерея Primavera. Все права защищены.</p>
+  <p class="footer__copy">© 2026 Галерея ПРИМАВЕРА. Все права защищены.</p>
 </footer>
 
 <div class="lightbox-overlay" id="lightbox" onclick="if(event.target.id==='lightbox')closeLightbox()">
@@ -1238,11 +1238,11 @@
   function sharePainting(p) {
     const text = '🎨 Смотри какая картина — «' + p.title + '»\n' +
       p.width + '×' + p.height + ' см, ' + p.technique + '\n' +
-      formatPrice(p.price) + '\nГалерея Primavera';
+      formatPrice(p.price) + '\nГалерея ПРИМАВЕРА';
     const url = 'https://t.me/primavera_gallery_bot';
 
     if (navigator.share) {
-      navigator.share({ title: 'Галерея Primavera', text: text + '\n' + url }).catch(() => {});
+      navigator.share({ title: 'Галерея ПРИМАВЕРА', text: text + '\n' + url }).catch(() => {});
       return;
     }
 
