@@ -656,6 +656,53 @@
     .tile__title { font-family: var(--font-head); font-size: 16px; font-weight: 700; }
     .tile__desc { font-size: 12px; color: var(--text-sec); }
 
+    /* ── LIGHTBOX ── */
+    .lightbox-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.93);
+      z-index: 400;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      cursor: zoom-out;
+    }
+    .lightbox-overlay.open { display: flex; }
+    .lightbox-img {
+      max-width: 90vw;
+      max-height: 88vh;
+      object-fit: contain;
+      border-radius: 4px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+      cursor: default;
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      color: #fff;
+      font-size: 38px;
+      cursor: pointer;
+      line-height: 1;
+      background: none;
+      border: none;
+      opacity: 0.75;
+      padding: 4px;
+    }
+    .lightbox-close:hover { opacity: 1; }
+    .lightbox-title {
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: rgba(255,255,255,0.75);
+      font-family: var(--font-head);
+      font-size: 18px;
+      pointer-events: none;
+    }
+
     /* ── SHARE MODAL ── */
     .share-modal-overlay {
       display: none;
@@ -941,6 +988,12 @@
   <p class="footer__copy">© 2026 Галерея Primavera. Все права защищены.</p>
 </footer>
 
+<div class="lightbox-overlay" id="lightbox" onclick="if(event.target.id==='lightbox')closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">×</button>
+  <img class="lightbox-img" id="lightboxImg" src="" alt="">
+  <p class="lightbox-title" id="lightboxTitle"></p>
+</div>
+
 <div class="share-modal-overlay" id="shareModal" onclick="if(event.target===this)closeShareModal()">
   <div class="share-modal">
     <p class="share-modal__label">Поделиться с другом</p>
@@ -1088,6 +1141,19 @@
     document.getElementById('shareModal').classList.remove('open');
   }
 
+  function openLightbox(src, title) {
+    document.getElementById('lightboxImg').src = src;
+    document.getElementById('lightboxImg').alt = title;
+    document.getElementById('lightboxTitle').textContent = title;
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
   function openArtistModal(artistName) {
     const artist = allArtistsData.find(a => a.name === artistName);
     if (!artist) return;
@@ -1099,20 +1165,18 @@
     const grid = document.getElementById('artistModalGrid');
     grid.innerHTML = artistPaintings.map(p => `
       <div class="card">
-        <img class="card__image" src="${p.image}" alt="${p.title}" loading="lazy">
+        <img class="card__image" src="${p.image}" alt="${p.title}" loading="lazy" onclick="openLightbox('${p.image}','${p.title.replace(/'/g,"&#39;")}')" style="cursor:zoom-in">
         <div class="card__body">
           <h3 class="card__title">${p.title}</h3>
           <p class="card__meta">${p.year ? p.year + ', ' : ''}${p.width}×${p.height} см, ${p.technique}</p>
           <p class="card__price">${formatPrice(p.price)}</p>
         </div>
         <div class="card__actions">
-          <div class="card__actions-row">
-            <button class="btn btn--outline" onclick="closeArtistModal();selectPaintingForTryout(paintings.find(x=>x.id==='${p.id}'));document.getElementById('tryout').scrollIntoView({behavior:'smooth'})">Примерить</button>
-            <a href="${buildContactUrl(p)}" target="_blank" rel="noopener" class="btn btn--accent">Написать</a>
-          </div>
+          <a href="${buildContactUrl(p)}" target="_blank" rel="noopener" class="btn btn--accent" style="width:100%;text-align:center">Написать</a>
         </div>
       </div>
     `).join('');
+    grid.insertAdjacentHTML('afterend', '<div style="margin-top:32px;text-align:center"><button onclick="closeArtistModal()" style="background:none;border:1.5px solid var(--border);border-radius:6px;padding:12px 28px;font-family:var(--font-body);font-size:14px;cursor:pointer;color:var(--text-sec)">← Вернуться</button></div>');
     document.getElementById('artistModal').classList.add('open');
     document.body.style.overflow = 'hidden';
   }
@@ -1128,7 +1192,7 @@
 
     grid.innerHTML = list.map(p => `
       <div class="card" data-artist="${p.artist}">
-        <img class="card__image" src="${p.image}" alt="${p.title}" loading="lazy">
+        <img class="card__image" src="${p.image}" alt="${p.title}" loading="lazy" onclick="openLightbox('${p.image}','${p.title.replace(/'/g,"&#39;")}')" style="cursor:zoom-in">
         <div class="card__body">
           <span class="card__artist">${p.artistLabel}</span>
           <h3 class="card__title">${p.title}</h3>
