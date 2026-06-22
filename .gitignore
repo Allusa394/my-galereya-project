@@ -1,0 +1,7 @@
+chat-history/
+.claude/
+*.log
+.env
+node_modules/
+
+.vercel

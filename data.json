@@ -1,0 +1,162 @@
+{
+  "gallery": {
+    "name": "Галерея Primavera",
+    "telegram": "Alla_svetova",
+    "whatsapp": "79870016979",
+    "vk": "https://vk.com/id22284923",
+    "tagline": "Авторские картины маслом"
+  },
+  "artists": [
+    {
+      "name": "Андрей Соколов",
+      "photoUrl": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&auto=format&fit=crop",
+      "bio": "Маринист и городской пейзажист. Серии о Крыме, Черноморском побережье и южных городах. Работает в технике масло на холсте на пленэре."
+    }
+  ],
+  "paintings": [
+    {
+      "id": "p01",
+      "title": "Скалы у моря",
+      "artist": "sokolov",
+      "artistLabel": "Андрей Соколов",
+      "technique": "Холст, масло",
+      "width": 40,
+      "height": 30,
+      "year": 2026,
+      "price": 28000,
+      "imageUrl": "images/p01.jpg"
+    },
+    {
+      "id": "p02",
+      "title": "Деревья у воды",
+      "artist": "sokolov",
+      "artistLabel": "Андрей Соколов",
+      "technique": "Холст, масло",
+      "width": 35,
+      "height": 25,
+      "year": 2026,
+      "price": 22000,
+      "imageUrl": "images/p02.jpg"
+    },
+    {
+      "id": "p03",
+      "title": "Южная бухта",
+      "artist": "sokolov",
+      "artistLabel": "Андрей Соколов",
+      "technique": "Холст, масло",
+      "width": 40,
+      "height": 30,
+      "year": 2026,
+      "price": 32000,
+      "imageUrl": "images/p03.jpg"
+    },
+    {
+      "id": "p04",
+      "title": "Скала",
+      "artist": "sokolov",
+      "artistLabel": "Андрей Соколов",
+      "technique": "Холст, масло",
+      "width": 30,
+      "height": 35,
+      "year": 2026,
+      "price": 24000,
+      "imageUrl": "images/p04.jpg"
+    },
+    {
+      "id": "p05",
+      "title": "Вечерний дворик",
+      "artist": "sokolov",
+      "artistLabel": "Андрей Соколов",
+      "technique": "Холст, масло",
+      "width": 30,
+      "height": 30,
+      "year": 2026,
+      "price": 26000,
+      "imageUrl": "images/p05.jpg"
+    },
+    {
+      "id": "p06",
+      "title": "Пляж. Полдень",
+      "artist": "sokolov",
+      "artistLabel": "Андрей Соколов",
+      "technique": "Холст, масло",
+      "width": 50,
+      "height": 25,
+      "year": 2026,
+      "price": 35000,
+      "imageUrl": "images/p06.jpg"
+    },
+    {
+      "id": "p07",
+      "title": "Две скалы",
+      "artist": "sokolov",
+      "artistLabel": "Андрей Соколов",
+      "technique": "Холст, масло",
+      "width": 50,
+      "height": 30,
+      "year": 2026,
+      "price": 38000,
+      "imageUrl": "images/p07.jpg"
+    },
+    {
+      "id": "p08",
+      "title": "Южный дворик",
+      "artist": "sokolov",
+      "artistLabel": "Андрей Соколов",
+      "technique": "Холст, масло",
+      "width": 30,
+      "height": 50,
+      "year": 2026,
+      "price": 30000,
+      "imageUrl": "images/p08.jpg"
+    },
+    {
+      "id": "p09",
+      "title": "Скала в море",
+      "artist": "sokolov",
+      "artistLabel": "Андрей Соколов",
+      "technique": "Холст, масло",
+      "width": 45,
+      "height": 25,
+      "year": 2026,
+      "price": 28000,
+      "imageUrl": "images/p09.jpg"
+    },
+    {
+      "id": "p10",
+      "title": "Синяя бухта",
+      "artist": "sokolov",
+      "artistLabel": "Андрей Соколов",
+      "technique": "Холст, масло",
+      "width": 30,
+      "height": 40,
+      "year": 2025,
+      "price": 32000,
+      "imageUrl": "images/p10.jpg"
+    },
+    {
+      "id": "p11",
+      "title": "Парк с розами",
+      "artist": "sokolov",
+      "artistLabel": "Андрей Соколов",
+      "technique": "Холст, масло",
+      "width": 40,
+      "height": 30,
+      "year": 2025,
+      "price": 34000,
+      "imageUrl": "images/p11.jpg"
+    },
+    {
+      "id": "p12",
+      "title": "Пляж. Лето",
+      "artist": "sokolov",
+      "artistLabel": "Андрей Соколов",
+      "technique": "Холст, масло",
+      "width": 60,
+      "height": 35,
+      "year": 2025,
+      "price": 45000,
+      "imageUrl": "images/p12.jpg"
+    }
+  ]
+}
