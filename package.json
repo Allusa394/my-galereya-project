@@ -1,0 +1,10 @@
+{
+  "name": "my-galereya-tg",
+  "version": "1.0.0",
+  "description": "Галерея авторских картин — Telegram Mini App + бот на Vercel",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "grammy": "^1.30.0"
+  }
+}
