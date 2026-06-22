@@ -584,9 +584,10 @@
       .footer { padding: 48px 20px; }
       .footer__inner { flex-direction: column; gap: 32px; }
 
-      .tiles { padding: 20px; }
-      .tiles__inner { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-      .tile { padding: 20px 12px 18px; }
+      .tiles { padding: 16px; }
+      .tiles__inner { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .tile { padding: 18px 10px 16px; }
+      .tile__icon-wrap { width: 44px; height: 44px; font-size: 20px; }
 
       .artist-modal__header { flex-direction: column; gap: 20px; padding: 32px 24px 28px; }
       .artist-modal__body { padding: 28px 24px; }
@@ -614,28 +615,102 @@
     .tile {
       background: #fff;
       border: 1.5px solid var(--border);
+      border-top-width: 3px;
       border-radius: 8px;
-      padding: 28px 16px 24px;
+      padding: 24px 16px 20px;
       text-align: center;
       text-decoration: none;
       color: var(--text);
       cursor: pointer;
-      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+      transition: box-shadow 0.2s, transform 0.15s;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 8px;
       font-family: var(--font-body);
       font-size: inherit;
+      min-width: 0;
     }
     .tile:hover {
-      border-color: var(--accent);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.09);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.1);
       transform: translateY(-2px);
     }
-    .tile__icon { font-size: 28px; line-height: 1; }
-    .tile__title { font-family: var(--font-head); font-size: 17px; font-weight: 700; }
+    .tile--catalog { background: #FDEEE6; border-color: #F4C9B0; border-top-color: #D4916E; }
+    .tile--tryout  { background: #E0ECF8; border-color: #B5CDE8; border-top-color: #6B8CAE; }
+    .tile--artists { background: #E2F2E6; border-color: #B3D9BA; border-top-color: #7A9E7E; }
+    .tile--contact { background: #EEE6F5; border-color: #CDB8DF; border-top-color: #9B7EA8; }
+    .tile__icon-wrap {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 2px;
+    }
+    .tile--catalog .tile__icon-wrap { background: rgba(255,255,255,0.65); }
+    .tile--tryout  .tile__icon-wrap { background: rgba(255,255,255,0.65); }
+    .tile--artists .tile__icon-wrap { background: rgba(255,255,255,0.65); }
+    .tile--contact .tile__icon-wrap { background: rgba(255,255,255,0.65); }
+    .tile__title { font-family: var(--font-head); font-size: 16px; font-weight: 700; }
     .tile__desc { font-size: 12px; color: var(--text-sec); }
+
+    /* ── SHARE MODAL ── */
+    .share-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 300;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .share-modal-overlay.open { display: flex; }
+    .share-modal {
+      background: #fff;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 16px 16px 0 0;
+      padding: 28px 24px 40px;
+      text-align: center;
+    }
+    .share-modal__label {
+      font-family: var(--font-head);
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .share-modal__painting { font-size: 14px; color: var(--text-sec); margin-bottom: 24px; }
+    .share-modal__btns { display: flex; gap: 12px; margin-bottom: 12px; }
+    .share-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 15px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      text-decoration: none;
+      color: #fff;
+      transition: opacity 0.15s;
+    }
+    .share-btn:hover { opacity: 0.88; }
+    .share-btn--tg { background: #2AABEE; }
+    .share-btn--wa { background: #25D366; }
+    .share-modal__cancel {
+      width: 100%;
+      padding: 12px;
+      background: none;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      color: var(--text-sec);
+      font-family: var(--font-body);
+    }
 
     /* ── ARTIST MODAL ── */
     .artist-modal-overlay {
@@ -729,23 +804,23 @@
 
 <div class="tiles">
   <div class="tiles__inner">
-    <a href="#catalog" class="tile">
-      <span class="tile__icon">🖼</span>
+    <a href="#catalog" class="tile tile--catalog">
+      <div class="tile__icon-wrap">🖼</div>
       <span class="tile__title">Каталог</span>
       <span class="tile__desc">12 картин</span>
     </a>
-    <a href="#tryout" class="tile">
-      <span class="tile__icon">🏠</span>
+    <a href="#tryout" class="tile tile--tryout">
+      <div class="tile__icon-wrap">🏠</div>
       <span class="tile__title">Примерка</span>
       <span class="tile__desc">На вашей стене</span>
     </a>
-    <a href="#artists" class="tile">
-      <span class="tile__icon">🎨</span>
+    <a href="#artists" class="tile tile--artists">
+      <div class="tile__icon-wrap">🎨</div>
       <span class="tile__title">Художники</span>
       <span class="tile__desc">Авторские работы</span>
     </a>
-    <a href="#contact" class="tile">
-      <span class="tile__icon">✉️</span>
+    <a href="#contact" class="tile tile--contact">
+      <div class="tile__icon-wrap">✉️</div>
       <span class="tile__title">Связаться</span>
       <span class="tile__desc">Telegram · WhatsApp</span>
     </a>
@@ -865,6 +940,18 @@
   </div>
   <p class="footer__copy">© 2026 Галерея Primavera. Все права защищены.</p>
 </footer>
+
+<div class="share-modal-overlay" id="shareModal" onclick="if(event.target===this)closeShareModal()">
+  <div class="share-modal">
+    <p class="share-modal__label">Поделиться с другом</p>
+    <p class="share-modal__painting" id="shareModalTitle"></p>
+    <div class="share-modal__btns">
+      <a id="shareTgBtn" href="#" target="_blank" rel="noopener" class="share-btn share-btn--tg" onclick="closeShareModal()">✈️ Telegram</a>
+      <a id="shareWaBtn" href="#" target="_blank" rel="noopener" class="share-btn share-btn--wa" onclick="closeShareModal()">💬 WhatsApp</a>
+    </div>
+    <button class="share-modal__cancel" onclick="closeShareModal()">Закрыть</button>
+  </div>
+</div>
 
 <div class="artist-modal-overlay" id="artistModal" onclick="if(event.target===this)closeArtistModal()">
   <div class="artist-modal">
@@ -991,8 +1078,14 @@
     const tgShare = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text);
     const waShare = 'https://wa.me/?text=' + encodeURIComponent(text + '\n' + url);
 
-    const choice = confirm('Поделиться:\nОК — Telegram\nОтмена — WhatsApp');
-    window.open(choice ? tgShare : waShare, '_blank');
+    document.getElementById('shareModalTitle').textContent = '«' + p.title + '»';
+    document.getElementById('shareTgBtn').href = tgShare;
+    document.getElementById('shareWaBtn').href = waShare;
+    document.getElementById('shareModal').classList.add('open');
+  }
+
+  function closeShareModal() {
+    document.getElementById('shareModal').classList.remove('open');
   }
 
   function openArtistModal(artistName) {
