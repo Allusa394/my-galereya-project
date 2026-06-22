@@ -584,11 +584,6 @@
       .footer { padding: 48px 20px; }
       .footer__inner { flex-direction: column; gap: 32px; }
 
-      .tiles { padding: 16px; }
-      .tiles__inner { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-      .tile { padding: 18px 10px 16px; }
-      .tile__icon-wrap { width: 44px; height: 44px; font-size: 20px; }
-
       .artist-modal__header { flex-direction: column; gap: 20px; padding: 32px 24px 28px; }
       .artist-modal__body { padding: 28px 24px; }
       .artist-modal__grid { grid-template-columns: 1fr; }
@@ -602,8 +597,8 @@
     /* ── TILES ── */
     .tiles {
       padding: 28px 40px;
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
+      background: var(--bg-dark);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
     }
     .tiles__inner {
       max-width: 1200px;
@@ -613,16 +608,16 @@
       gap: 16px;
     }
     .tile {
-      background: #fff;
-      border: 1.5px solid var(--border);
+      background: rgba(255,255,255,0.05);
+      border: 1.5px solid rgba(255,255,255,0.1);
       border-top-width: 3px;
       border-radius: 8px;
       padding: 24px 16px 20px;
       text-align: center;
       text-decoration: none;
-      color: var(--text);
+      color: #fff;
       cursor: pointer;
-      transition: box-shadow 0.2s, transform 0.15s;
+      transition: box-shadow 0.2s, transform 0.15s, background 0.15s;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -632,13 +627,14 @@
       min-width: 0;
     }
     .tile:hover {
-      box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.5);
       transform: translateY(-2px);
+      background: rgba(255,255,255,0.09);
     }
-    .tile--catalog { background: #FDEEE6; border-color: #F4C9B0; border-top-color: #D4916E; }
-    .tile--tryout  { background: #E0ECF8; border-color: #B5CDE8; border-top-color: #6B8CAE; }
-    .tile--artists { background: #E2F2E6; border-color: #B3D9BA; border-top-color: #7A9E7E; }
-    .tile--contact { background: #EEE6F5; border-color: #CDB8DF; border-top-color: #9B7EA8; }
+    .tile--catalog { border-top-color: #D4916E; }
+    .tile--tryout  { border-top-color: #6B9FD4; }
+    .tile--artists { border-top-color: #7AC48A; }
+    .tile--contact { border-top-color: #A67ACA; }
     .tile__icon-wrap {
       width: 52px;
       height: 52px;
@@ -648,13 +644,16 @@
       justify-content: center;
       font-size: 24px;
       margin-bottom: 2px;
+      background: rgba(255,255,255,0.08);
     }
-    .tile--catalog .tile__icon-wrap { background: rgba(255,255,255,0.65); }
-    .tile--tryout  .tile__icon-wrap { background: rgba(255,255,255,0.65); }
-    .tile--artists .tile__icon-wrap { background: rgba(255,255,255,0.65); }
-    .tile--contact .tile__icon-wrap { background: rgba(255,255,255,0.65); }
-    .tile__title { font-family: var(--font-head); font-size: 16px; font-weight: 700; }
-    .tile__desc { font-size: 12px; color: var(--text-sec); }
+    .tile__title { font-family: var(--font-head); font-size: 16px; font-weight: 700; color: #fff; }
+    .tile__desc { font-size: 12px; color: rgba(255,255,255,0.5); }
+    @media (max-width: 768px) {
+      .tiles { padding: 16px; }
+      .tiles__inner { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .tile { padding: 18px 10px 16px; }
+      .tile__icon-wrap { width: 44px; height: 44px; font-size: 20px; }
+    }
 
     /* ── SOLD BADGE ── */
     .card { position: relative; }
@@ -933,7 +932,7 @@
 <body>
 
 <nav class="nav">
-  <a href="#" class="nav__logo">Галерея Primavera</a>
+  <a href="#" class="nav__logo">Галерея Примавера</a>
   <ul class="nav__links">
     <li><a href="#catalog">Каталог</a></li>
     <li><a href="#artists">Художники</a></li>
@@ -1073,7 +1072,7 @@
 <footer id="contact" class="footer">
   <div class="footer__inner">
     <div>
-      <a href="#" class="footer__logo">Галерея Primavera</a>
+      <a href="#" class="footer__logo">Галерея Примавера</a>
       <p class="footer__tagline">Авторские картины маслом</p>
     </div>
     <div>
@@ -1086,7 +1085,7 @@
       </div>
     </div>
   </div>
-  <p class="footer__copy">© 2026 Галерея Primavera. Все права защищены.</p>
+  <p class="footer__copy">© 2026 Галерея Примавера. Все права защищены.</p>
 </footer>
 
 <div class="lightbox-overlay" id="lightbox" onclick="if(event.target.id==='lightbox')closeLightbox()">
@@ -1239,11 +1238,11 @@
   function sharePainting(p) {
     const text = '🎨 Смотри какая картина — «' + p.title + '»\n' +
       p.width + '×' + p.height + ' см, ' + p.technique + '\n' +
-      formatPrice(p.price) + '\nГалерея Primavera';
+      formatPrice(p.price) + '\nГалерея Примавера';
     const url = 'https://t.me/primavera_gallery_bot';
 
     if (navigator.share) {
-      navigator.share({ title: 'Галерея Primavera', text: text + '\n' + url }).catch(() => {});
+      navigator.share({ title: 'Галерея Примавера', text: text + '\n' + url }).catch(() => {});
       return;
     }
 
