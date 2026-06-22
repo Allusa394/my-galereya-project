@@ -260,16 +260,34 @@
 
     .card__actions {
       display: flex;
+      flex-direction: column;
       gap: 8px;
       padding: 16px 20px 20px;
     }
 
-    .card__actions .btn {
+    .card__actions-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .card__actions-row .btn {
       flex: 1;
       text-align: center;
       padding: 10px 12px;
       font-size: 13px;
     }
+
+    .btn--share {
+      width: 100%;
+      text-align: center;
+      padding: 9px 12px;
+      font-size: 13px;
+      background: transparent;
+      color: var(--text-sec);
+      border: 1.5px solid var(--border);
+    }
+
+    .btn--share:hover { background: var(--bg); color: var(--text); }
 
     /* ── WALL TRYOUT ── */
     .tryout {
@@ -811,6 +829,24 @@
     return 'https://t.me/' + CONTACT_TG + '?text=' + msg;
   }
 
+  function sharePainting(p) {
+    const text = '🎨 Смотри какая картина — «' + p.title + '»\n' +
+      p.width + '×' + p.height + ' см, ' + p.technique + '\n' +
+      formatPrice(p.price) + '\nГалерея Primavera';
+    const url = 'https://t.me/primavera_gallery_bot';
+
+    if (navigator.share) {
+      navigator.share({ title: 'Галерея Primavera', text: text + '\n' + url }).catch(() => {});
+      return;
+    }
+
+    const tgShare = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text);
+    const waShare = 'https://wa.me/?text=' + encodeURIComponent(text + '\n' + url);
+
+    const choice = confirm('Поделиться:\nОК — Telegram\nОтмена — WhatsApp');
+    window.open(choice ? tgShare : waShare, '_blank');
+  }
+
   function renderCatalog(filter) {
     const grid = document.getElementById('cardsGrid');
     const list = filter === 'all' ? paintings : paintings.filter(p => p.artist === filter);
@@ -826,8 +862,11 @@
           <p class="card__delivery">🚚 Доставка СДЭК за счёт покупателя</p>
         </div>
         <div class="card__actions">
-          <button class="btn btn--outline" onclick="selectPaintingForTryout(paintings.find(x=>x.id==='${p.id}'));document.getElementById('tryout').scrollIntoView({behavior:'smooth'});document.getElementById('tryout').focus&&window.scrollBy(0,1)">Примерить</button>
-          <a href="${buildContactUrl(p)}" target="_blank" rel="noopener" class="btn btn--accent">Написать</a>
+          <div class="card__actions-row">
+            <button class="btn btn--outline" onclick="selectPaintingForTryout(paintings.find(x=>x.id==='${p.id}'));document.getElementById('tryout').scrollIntoView({behavior:'smooth'})">Примерить</button>
+            <a href="${buildContactUrl(p)}" target="_blank" rel="noopener" class="btn btn--accent">Написать</a>
+          </div>
+          <button class="btn btn--share" onclick="sharePainting(paintings.find(x=>x.id==='${p.id}'))">📤 Поделиться с другом</button>
         </div>
       </div>
     `).join('');
