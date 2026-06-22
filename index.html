@@ -656,6 +656,99 @@
     .tile__title { font-family: var(--font-head); font-size: 16px; font-weight: 700; }
     .tile__desc { font-size: 12px; color: var(--text-sec); }
 
+    /* ── SOLD BADGE ── */
+    .card { position: relative; }
+    .card__sold-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.55);
+      z-index: 2;
+      pointer-events: none;
+      border-radius: var(--r-card);
+    }
+    .card__sold-badge {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: #1A1A1A;
+      color: #fff;
+      font-family: var(--font-body);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 2px;
+      z-index: 3;
+    }
+
+    /* ── FAVORITES ── */
+    .btn--fav {
+      background: none;
+      border: 1.5px solid var(--border);
+      color: var(--text-sec);
+      font-size: 16px;
+      padding: 9px 14px;
+      border-radius: var(--r-btn);
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      line-height: 1;
+    }
+    .btn--fav.active { border-color: #e05c5c; color: #e05c5c; }
+    .btn--fav:hover { border-color: #e05c5c; color: #e05c5c; }
+
+    /* ── REVIEWS ── */
+    .reviews {
+      padding: var(--pad-section) 40px;
+      background: #fff;
+    }
+    .reviews__inner { max-width: 1200px; margin: 0 auto; }
+    .reviews__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 40px;
+    }
+    .review-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .review-card__top {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .review-card__avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-family: var(--font-head);
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .review-card__meta { flex: 1; }
+    .review-card__name { font-weight: 600; font-size: 15px; }
+    .review-card__painting { font-size: 12px; color: var(--text-sec); margin-top: 2px; }
+    .review-card__stars { color: #F5A623; font-size: 15px; letter-spacing: 2px; }
+    .review-card__text { font-size: 15px; color: var(--text-sec); line-height: 1.75; }
+    .review-card__date { font-size: 12px; color: var(--border); margin-top: auto; }
+
+    @media (max-width: 768px) {
+      .reviews__grid { grid-template-columns: 1fr; }
+      .reviews { padding: var(--pad-section) 20px; }
+    }
+
     /* ── LIGHTBOX ── */
     .lightbox-overlay {
       display: none;
@@ -845,6 +938,7 @@
     <li><a href="#catalog">Каталог</a></li>
     <li><a href="#artists">Художники</a></li>
     <li><a href="#tryout">Примерка</a></li>
+    <li><a href="#reviews">Отзывы</a></li>
     <li><a href="#contact">Контакт</a></li>
   </ul>
 </nav>
@@ -969,6 +1063,13 @@
   </div>
 </section>
 
+<section id="reviews" class="reviews">
+  <div class="reviews__inner">
+    <h2 class="section__title">Отзывы покупателей</h2>
+    <div class="reviews__grid" id="reviewsGrid"></div>
+  </div>
+</section>
+
 <footer id="contact" class="footer">
   <div class="footer__inner">
     <div>
@@ -1041,6 +1142,23 @@
   let paintings = [];
   let allArtistsData = [];
 
+  // ── FAVOURITES ──
+  function getFavs() {
+    try { return JSON.parse(localStorage.getItem('pgFavs') || '[]'); } catch { return []; }
+  }
+  function toggleFav(id) {
+    const favs = getFavs();
+    const i = favs.indexOf(id);
+    if (i === -1) favs.push(id); else favs.splice(i, 1);
+    localStorage.setItem('pgFavs', JSON.stringify(favs));
+    document.querySelectorAll('[data-fav-id="' + id + '"]').forEach(btn => {
+      btn.classList.toggle('active', favs.includes(id));
+      btn.title = favs.includes(id) ? 'Убрать из избранного' : 'В избранное';
+    });
+    const activeFilter = document.querySelector('.filter-btn--active');
+    if (activeFilter && activeFilter.dataset.filter === 'fav') renderCatalog('fav');
+  }
+
   // Парсер CSV для Google Sheets (обрабатывает кавычки и запятые внутри полей)
   function parseCSV(csv) {
     const lines = csv.trim().split('\n');
@@ -1098,6 +1216,7 @@
         paintings = data.paintings.map(p => ({ ...p, image: p.imageUrl }));
         allArtistsData = data.artists;
         renderArtists(data.artists);
+        if (data.reviews) renderReviews(data.reviews);
       }
       renderCatalog('all');
       renderFilterBar(paintings);
@@ -1186,29 +1305,75 @@
     document.body.style.overflow = '';
   }
 
+  function renderReviews(reviews) {
+    const grid = document.getElementById('reviewsGrid');
+    if (!grid || !reviews || !reviews.length) return;
+    const months = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+    grid.innerHTML = reviews.map(r => {
+      const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+      const letter = r.name.charAt(0).toUpperCase();
+      const [y, m] = (r.date || '').split('-');
+      const dateStr = m ? months[parseInt(m,10)-1] + ' ' + y : (y || '');
+      return `
+        <div class="review-card">
+          <div class="review-card__top">
+            <div class="review-card__avatar">${letter}</div>
+            <div class="review-card__meta">
+              <p class="review-card__name">${r.name}</p>
+              ${r.painting ? '<p class="review-card__painting">Купила: «' + r.painting + '»</p>' : ''}
+            </div>
+          </div>
+          <div class="review-card__stars">${stars}</div>
+          <p class="review-card__text">${r.text}</p>
+          ${dateStr ? '<p class="review-card__date">' + dateStr + '</p>' : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
   function renderCatalog(filter) {
     const grid = document.getElementById('cardsGrid');
-    const list = filter === 'all' ? paintings : paintings.filter(p => p.artist === filter);
+    const favs = getFavs();
+    let list;
+    if (filter === 'fav') list = paintings.filter(p => favs.includes(p.id));
+    else if (filter === 'all') list = paintings;
+    else list = paintings.filter(p => p.artist === filter);
 
-    grid.innerHTML = list.map(p => `
-      <div class="card" data-artist="${p.artist}">
-        <img class="card__image" src="${p.image}" alt="${p.title}" loading="lazy" onclick="openLightbox('${p.image}','${p.title.replace(/'/g,"&#39;")}')" style="cursor:zoom-in">
-        <div class="card__body">
-          <span class="card__artist">${p.artistLabel}</span>
-          <h3 class="card__title">${p.title}</h3>
-          <p class="card__meta">${p.year ? p.year + ', ' : ''}${p.width}×${p.height}, ${p.technique}</p>
-          <p class="card__price">${formatPrice(p.price)}</p>
-          <p class="card__delivery">🚚 Доставка СДЭК за счёт покупателя</p>
-        </div>
-        <div class="card__actions">
-          <div class="card__actions-row">
-            <button class="btn btn--outline" onclick="selectPaintingForTryout(paintings.find(x=>x.id==='${p.id}'));document.getElementById('tryout').scrollIntoView({behavior:'smooth'})">Примерить</button>
-            <a href="${buildContactUrl(p)}" target="_blank" rel="noopener" class="btn btn--accent">Написать</a>
+    if (filter === 'fav' && list.length === 0) {
+      grid.innerHTML = '<div class="loading-state">Вы ещё не добавили картины в избранное.<br>Нажмите ❤ под любой картиной.</div>';
+      return;
+    }
+
+    grid.innerHTML = list.map(p => {
+      const isFav = favs.includes(p.id);
+      const soldOverlay = p.sold ? '<div class="card__sold-overlay"></div><span class="card__sold-badge">Продано</span>' : '';
+      const actions = p.sold
+        ? ''
+        : `<div class="card__actions">
+            <div class="card__actions-row">
+              <button class="btn btn--outline" onclick="selectPaintingForTryout(paintings.find(x=>x.id==='${p.id}'));document.getElementById('tryout').scrollIntoView({behavior:'smooth'})">Примерить</button>
+              <a href="${buildContactUrl(p)}" target="_blank" rel="noopener" class="btn btn--accent">Написать</a>
+            </div>
+            <div class="card__actions-row">
+              <button class="btn btn--fav ${isFav ? 'active' : ''}" data-fav-id="${p.id}" onclick="toggleFav('${p.id}')" title="${isFav ? 'Убрать из избранного' : 'В избранное'}">❤</button>
+              <button class="btn btn--share" style="flex:1" onclick="sharePainting(paintings.find(x=>x.id==='${p.id}'))">📤 Поделиться</button>
+            </div>
+          </div>`;
+      return `
+        <div class="card" data-artist="${p.artist}">
+          ${soldOverlay}
+          <img class="card__image" src="${p.image}" alt="${p.title}" loading="lazy" onclick="openLightbox('${p.image}','${p.title.replace(/'/g,"&#39;")}')" style="cursor:zoom-in${p.sold ? ';filter:grayscale(40%)' : ''}">
+          <div class="card__body">
+            <span class="card__artist">${p.artistLabel}</span>
+            <h3 class="card__title">${p.title}</h3>
+            <p class="card__meta">${p.year ? p.year + ', ' : ''}${p.width}×${p.height} см, ${p.technique}</p>
+            <p class="card__price">${p.sold ? '<span style="color:var(--text-sec);font-weight:400">Продана</span>' : formatPrice(p.price)}</p>
+            ${p.sold ? '' : '<p class="card__delivery">🚚 Доставка СДЭК за счёт покупателя</p>'}
           </div>
-          <button class="btn btn--share" onclick="sharePainting(paintings.find(x=>x.id==='${p.id}'))">📤 Поделиться с другом</button>
+          ${actions}
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   function renderFilterBar(paintings) {
@@ -1223,7 +1388,8 @@
       }
     });
     bar.innerHTML = `<button class="filter-btn filter-btn--active" data-filter="all">Все работы</button>` +
-      artists.map(a => `<button class="filter-btn" data-filter="${a.id}">${a.label}</button>`).join('');
+      artists.map(a => `<button class="filter-btn" data-filter="${a.id}">${a.label}</button>`).join('') +
+      `<button class="filter-btn" data-filter="fav">❤ Избранное</button>`;
     bar.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('filter-btn--active'));
