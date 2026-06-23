@@ -1347,16 +1347,20 @@
 
   function goToArtistWorks() {
     closeArtistModal();
-    const bar = document.getElementById('filterBar');
-    if (bar && _currentArtistId) {
-      const btn = bar.querySelector('[data-filter="' + _currentArtistId + '"]');
-      if (btn) {
-        bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('filter-btn--active'));
-        btn.classList.add('filter-btn--active');
-        renderCatalog(_currentArtistId);
+    setTimeout(() => {
+      if (_currentArtistId) {
+        const bar = document.getElementById('filterBar');
+        if (bar) {
+          const btn = bar.querySelector('[data-filter="' + _currentArtistId + '"]');
+          if (btn) btn.click();
+        }
       }
-    }
-    document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' });
+      const catalog = document.getElementById('catalog');
+      if (catalog) {
+        const top = catalog.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: top, behavior: 'smooth' });
+      }
+    }, 100);
   }
 
   function renderReviews(reviews) {
