@@ -1279,7 +1279,7 @@
   }
 
   function buildContactUrl(p) {
-    const msg = encodeURIComponent('Здравствуйте, интересует картина «' + p.title + '»');
+    const msg = encodeURIComponent('Здравствуйте, хочу приобрести картину «' + p.title + '»');
     return 'https://t.me/' + CONTACT_TG + '?text=' + msg;
   }
 
@@ -1340,7 +1340,7 @@
           <p class="card__price">${formatPrice(p.price)}</p>
         </div>
         <div class="card__actions">
-          <a href="${buildContactUrl(p)}" target="_blank" rel="noopener" class="btn btn--accent" style="width:100%;text-align:center">Написать</a>
+          <a href="${buildContactUrl(p)}" target="_blank" rel="noopener" class="btn btn--accent" style="width:100%;text-align:center">Написать по приобретению</a>
         </div>
       </div>
     `).join('');
@@ -1401,7 +1401,7 @@
         : `<div class="card__actions">
             <div class="card__actions-row">
               <button class="btn btn--outline" onclick="selectPaintingForTryout(paintings.find(x=>x.id==='${p.id}'));document.getElementById('tryout').scrollIntoView({behavior:'smooth'})">Примерить</button>
-              <a href="${buildContactUrl(p)}" target="_blank" rel="noopener" class="btn btn--accent">Написать</a>
+              <a href="${buildContactUrl(p)}" target="_blank" rel="noopener" class="btn btn--accent">Написать по приобретению</a>
             </div>
             <div class="card__actions-row">
               <button class="btn btn--fav ${isFav ? 'active' : ''}" data-fav-id="${p.id}" onclick="toggleFav('${p.id}')" title="${isFav ? 'Убрать из избранного' : 'В избранное'}">❤</button>
