@@ -902,18 +902,30 @@
       position: relative;
       margin: auto;
     }
-    .artist-modal__close {
-      position: absolute;
-      top: 14px;
-      right: 18px;
+    .artist-modal__topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px 0;
+    }
+    .artist-modal__back {
       background: none;
       border: none;
-      font-size: 30px;
+      font-size: 15px;
+      cursor: pointer;
+      color: var(--accent);
+      font-family: var(--font-body);
+      font-weight: 600;
+      padding: 4px 0;
+    }
+    .artist-modal__close {
+      background: none;
+      border: none;
+      font-size: 28px;
       cursor: pointer;
       color: var(--text-sec);
       line-height: 1;
       padding: 4px 8px;
-      z-index: 1;
     }
     .artist-modal__close:hover { color: var(--text); }
     .artist-modal__header {
@@ -935,7 +947,12 @@
     .artist-modal__bio { font-size: 16px; color: var(--text-sec); line-height: 1.75; }
     .artist-modal__body { padding: 40px 48px; }
     .artist-modal__paintings-title { font-family: var(--font-head); font-size: 26px; font-weight: 700; margin-bottom: 24px; }
-    .artist-modal__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .artist-modal__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .artist-modal__card { cursor: zoom-in; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+    .artist-modal__card img { width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block; }
+    .artist-modal__card-info { padding: 8px 10px; }
+    .artist-modal__card-title { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+    .artist-modal__card-price { font-size: 12px; color: var(--accent); font-weight: 600; }
 
     /* ── LOADING ── */
     .loading-state {
@@ -1154,14 +1171,19 @@
 
 <div class="artist-modal-overlay" id="artistModal" onclick="if(event.target===this)closeArtistModal()">
   <div class="artist-modal">
-    <button class="artist-modal__close" onclick="closeArtistModal()">×</button>
+    <div class="artist-modal__topbar">
+      <button class="artist-modal__back" onclick="closeArtistModal()">← Назад</button>
+      <button class="artist-modal__close" onclick="closeArtistModal()">×</button>
+    </div>
     <div class="artist-modal__header">
       <img class="artist-modal__photo" id="artistModalPhoto" src="" alt="">
       <div class="artist-modal__info">
         <h2 class="artist-modal__name" id="artistModalName"></h2>
         <p class="artist-modal__bio" id="artistModalBio"></p>
-        <a href="javascript:;" class="btn btn--accent" id="artistModalWorksBtn" style="margin-top:20px;display:inline-block">Смотреть работы</a>
       </div>
+    </div>
+    <div class="artist-modal__body">
+      <div class="artist-modal__grid" id="artistModalGrid"></div>
     </div>
   </div>
 </div>
@@ -1325,18 +1347,24 @@
     document.body.style.overflow = '';
   }
 
-  let _currentArtistId = null;
-
   function openArtistModal(artistName) {
     const artist = allArtistsData.find(a => a.name === artistName);
     if (!artist) return;
-    _currentArtistId = paintings.find(p => p.artistLabel === artistName)?.artist || null;
     document.getElementById('artistModalPhoto').src = artist.photoUrl;
     document.getElementById('artistModalPhoto').alt = artist.name;
     document.getElementById('artistModalName').textContent = artist.name;
     document.getElementById('artistModalBio').textContent = artist.bio;
-    const worksBtn = document.getElementById('artistModalWorksBtn');
-    worksBtn.onclick = function(e) { e.preventDefault(); goToArtistWorks(); };
+    const artistPaintings = paintings.filter(p => p.artistLabel === artistName);
+    const grid = document.getElementById('artistModalGrid');
+    grid.innerHTML = artistPaintings.map(p => `
+      <div class="artist-modal__card" onclick="openLightbox('${p.image}','${p.title.replace(/'/g,"&#39;")}')">
+        <img src="${p.image}" alt="${p.title}" loading="lazy">
+        <div class="artist-modal__card-info">
+          <p class="artist-modal__card-title">${p.title}</p>
+          <p class="artist-modal__card-price">${formatPrice(p.price)}</p>
+        </div>
+      </div>
+    `).join('');
     document.getElementById('artistModal').classList.add('open');
     document.body.style.overflow = 'hidden';
   }
@@ -1346,28 +1374,6 @@
     document.body.style.overflow = '';
   }
 
-  function goToArtistWorks() {
-    closeArtistModal();
-    document.body.style.overflow = '';
-    if (_currentArtistId) {
-      const bar = document.getElementById('filterBar');
-      if (bar) {
-        bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('filter-btn--active'));
-        const btn = bar.querySelector('[data-filter="' + _currentArtistId + '"]');
-        if (btn) btn.classList.add('filter-btn--active');
-        renderCatalog(_currentArtistId);
-      }
-    }
-    if (window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.expand();
-    requestAnimationFrame(() => {
-      const catalog = document.getElementById('catalog');
-      if (!catalog) return;
-      const y = catalog.getBoundingClientRect().top + window.pageYOffset - 60;
-      window.scrollTo(0, y);
-      document.documentElement.scrollTop = y;
-      document.body.scrollTop = y;
-    });
-  }
 
   function renderReviews(reviews) {
     const grid = document.getElementById('reviewsGrid');
