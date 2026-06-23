@@ -1126,10 +1126,9 @@
     <div>
       <p class="footer__cta-title">Есть вопросы?<br>Напишите нам</p>
       <div class="footer__links">
-        <a href="https://t.me/Alla_svetova?text=Здравствуйте%2C+интересует+ваша+галерея" target="_blank" rel="noopener">Telegram</a>
-        <a href="https://wa.me/79870016979?text=Здравствуйте%2C+интересует+ваша+галерея" target="_blank" rel="noopener">WhatsApp</a>
-        <a href="https://vk.com/id22284923" target="_blank" rel="noopener">ВКонтакте</a>
-        <a href="https://www.cdek.ru" target="_blank" rel="noopener">Доставка СДЭК</a>
+        <a href="https://t.me/Alla_svetova?text=Здравствуйте%2C+интересует+ваша+галерея" onclick="openExternalLink(this.href);return false;" rel="noopener">Telegram</a>
+        <a href="https://wa.me/79870016979?text=Здравствуйте%2C+интересует+ваша+галерея" onclick="openExternalLink(this.href);return false;" rel="noopener">WhatsApp</a>
+        <a href="https://vk.com/im?sel=22284923" onclick="openExternalLink(this.href);return false;" rel="noopener">ВКонтакте</a>
       </div>
     </div>
   </div>
@@ -1177,7 +1176,17 @@
   //  'json'   → data.json  (обновить: написать Claude)
   //  'sheets' → Google Sheets CSV (обновить: самостоятельно в таблице)
   // ══════════════════════════════════════════
-  const CONTACT_TG = 'Alla_svetova'; // личный Telegram для кнопки "Написать"
+  const CONTACT_TG = 'Alla_svetova';
+
+  function openExternalLink(url) {
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      if (url.includes('t.me/')) tg.openTelegramLink(url);
+      else tg.openLink(url);
+    } else {
+      window.open(url, '_blank');
+    }
+  }
 
   const DATA_SOURCE = 'json';
   // Вариант A: data.json → написать Claude чтобы обновить
@@ -1340,7 +1349,7 @@
           <p class="card__price">${formatPrice(p.price)}</p>
         </div>
         <div class="card__actions">
-          <a href="${buildContactUrl(p)}" target="_blank" rel="noopener" class="btn btn--accent" style="width:100%;text-align:center">Написать по приобретению</a>
+          <a href="${buildContactUrl(p)}" onclick="openExternalLink(this.href);return false;" class="btn btn--accent" style="width:100%;text-align:center">Написать по приобретению</a>
         </div>
       </div>
     `).join('');
@@ -1401,7 +1410,7 @@
         : `<div class="card__actions">
             <div class="card__actions-row">
               <button class="btn btn--outline" onclick="selectPaintingForTryout(paintings.find(x=>x.id==='${p.id}'));document.getElementById('tryout').scrollIntoView({behavior:'smooth'})">Примерить</button>
-              <a href="${buildContactUrl(p)}" target="_blank" rel="noopener" class="btn btn--accent">Написать по приобретению</a>
+              <a href="${buildContactUrl(p)}" onclick="openExternalLink(this.href);return false;" class="btn btn--accent">Написать по приобретению</a>
             </div>
             <div class="card__actions-row">
               <button class="btn btn--fav ${isFav ? 'active' : ''}" data-fav-id="${p.id}" onclick="toggleFav('${p.id}')" title="${isFav ? 'Убрать из избранного' : 'В избранное'}">❤</button>
