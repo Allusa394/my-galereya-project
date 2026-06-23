@@ -899,7 +899,6 @@
       max-width: 960px;
       width: 100%;
       border-radius: 8px;
-      overflow: hidden;
       position: relative;
       margin: auto;
     }
@@ -1161,7 +1160,7 @@
       <div class="artist-modal__info">
         <h2 class="artist-modal__name" id="artistModalName"></h2>
         <p class="artist-modal__bio" id="artistModalBio"></p>
-        <button class="btn btn--accent" id="artistModalWorksBtn" style="margin-top:20px" onclick="goToArtistWorks()">Смотреть работы</button>
+        <a href="#catalog" class="btn btn--accent" id="artistModalWorksBtn" style="margin-top:20px;display:inline-block">Смотреть работы</a>
       </div>
     </div>
   </div>
@@ -1336,6 +1335,8 @@
     document.getElementById('artistModalPhoto').alt = artist.name;
     document.getElementById('artistModalName').textContent = artist.name;
     document.getElementById('artistModalBio').textContent = artist.bio;
+    const worksBtn = document.getElementById('artistModalWorksBtn');
+    worksBtn.onclick = function(e) { e.preventDefault(); goToArtistWorks(); };
     document.getElementById('artistModal').classList.add('open');
     document.body.style.overflow = 'hidden';
   }
