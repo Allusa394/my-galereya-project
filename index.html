@@ -1160,7 +1160,7 @@
       <div class="artist-modal__info">
         <h2 class="artist-modal__name" id="artistModalName"></h2>
         <p class="artist-modal__bio" id="artistModalBio"></p>
-        <a href="#catalog" class="btn btn--accent" id="artistModalWorksBtn" style="margin-top:20px;display:inline-block">Смотреть работы</a>
+        <a href="javascript:;" class="btn btn--accent" id="artistModalWorksBtn" style="margin-top:20px;display:inline-block">Смотреть работы</a>
       </div>
     </div>
   </div>
@@ -1349,22 +1349,24 @@
   function goToArtistWorks() {
     closeArtistModal();
     document.body.style.overflow = '';
-    setTimeout(() => {
-      if (_currentArtistId) {
-        const bar = document.getElementById('filterBar');
-        if (bar) {
-          bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('filter-btn--active'));
-          const btn = bar.querySelector('[data-filter="' + _currentArtistId + '"]');
-          if (btn) btn.classList.add('filter-btn--active');
-          renderCatalog(_currentArtistId);
-        }
+    if (_currentArtistId) {
+      const bar = document.getElementById('filterBar');
+      if (bar) {
+        bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('filter-btn--active'));
+        const btn = bar.querySelector('[data-filter="' + _currentArtistId + '"]');
+        if (btn) btn.classList.add('filter-btn--active');
+        renderCatalog(_currentArtistId);
       }
+    }
+    if (window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.expand();
+    requestAnimationFrame(() => {
       const catalog = document.getElementById('catalog');
-      if (catalog) {
-        try { catalog.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-        catch(e) { catalog.scrollIntoView(true); }
-      }
-    }, 150);
+      if (!catalog) return;
+      const y = catalog.getBoundingClientRect().top + window.pageYOffset - 60;
+      window.scrollTo(0, y);
+      document.documentElement.scrollTop = y;
+      document.body.scrollTop = y;
+    });
   }
 
   function renderReviews(reviews) {
