@@ -1161,11 +1161,8 @@
       <div class="artist-modal__info">
         <h2 class="artist-modal__name" id="artistModalName"></h2>
         <p class="artist-modal__bio" id="artistModalBio"></p>
+        <button class="btn btn--accent" id="artistModalWorksBtn" style="margin-top:20px" onclick="goToArtistWorks()">Смотреть работы</button>
       </div>
-    </div>
-    <div class="artist-modal__body">
-      <h3 class="artist-modal__paintings-title">Работы художника</h3>
-      <div class="artist-modal__grid" id="artistModalGrid"></div>
     </div>
   </div>
 </div>
@@ -1329,31 +1326,16 @@
     document.body.style.overflow = '';
   }
 
+  let _currentArtistId = null;
+
   function openArtistModal(artistName) {
     const artist = allArtistsData.find(a => a.name === artistName);
     if (!artist) return;
-    const artistPaintings = paintings.filter(p => p.artistLabel === artistName);
+    _currentArtistId = paintings.find(p => p.artistLabel === artistName)?.artist || null;
     document.getElementById('artistModalPhoto').src = artist.photoUrl;
     document.getElementById('artistModalPhoto').alt = artist.name;
     document.getElementById('artistModalName').textContent = artist.name;
     document.getElementById('artistModalBio').textContent = artist.bio;
-    const grid = document.getElementById('artistModalGrid');
-    grid.innerHTML = artistPaintings.map(p => `
-      <div class="card">
-        <div class="card__image-tap" onclick="openLightbox('${p.image}','${p.title.replace(/'/g,"&#39;")}')">
-          <img class="card__image" src="${p.image}" alt="${p.title}" loading="lazy">
-        </div>
-        <div class="card__body">
-          <h3 class="card__title">${p.title}</h3>
-          <p class="card__meta">${p.year ? p.year + ', ' : ''}${p.width}×${p.height} см, ${p.technique}</p>
-          <p class="card__price">${formatPrice(p.price)}</p>
-        </div>
-        <div class="card__actions">
-          <a href="${buildContactUrl(p)}" onclick="openExternalLink(this.href);return false;" class="btn btn--accent" style="width:100%;text-align:center">Написать по приобретению</a>
-        </div>
-      </div>
-    `).join('');
-    grid.insertAdjacentHTML('afterend', '<div style="margin-top:32px;text-align:center"><button onclick="closeArtistModal()" style="background:none;border:1.5px solid var(--border);border-radius:6px;padding:12px 28px;font-family:var(--font-body);font-size:14px;cursor:pointer;color:var(--text-sec)">← Вернуться</button></div>');
     document.getElementById('artistModal').classList.add('open');
     document.body.style.overflow = 'hidden';
   }
@@ -1361,6 +1343,20 @@
   function closeArtistModal() {
     document.getElementById('artistModal').classList.remove('open');
     document.body.style.overflow = '';
+  }
+
+  function goToArtistWorks() {
+    closeArtistModal();
+    const bar = document.getElementById('filterBar');
+    if (bar && _currentArtistId) {
+      const btn = bar.querySelector('[data-filter="' + _currentArtistId + '"]');
+      if (btn) {
+        bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('filter-btn--active'));
+        btn.classList.add('filter-btn--active');
+        renderCatalog(_currentArtistId);
+      }
+    }
+    document.getElementById('catalog').scrollIntoView({ behavior: 'smooth' });
   }
 
   function renderReviews(reviews) {
