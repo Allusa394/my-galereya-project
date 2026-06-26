@@ -5,3 +5,6 @@ chat-history/
 node_modules/
 
 .vercel
+
+# Скрипт с токенами — не пушить в GitHub
+sheets-import/sync-script.gs
