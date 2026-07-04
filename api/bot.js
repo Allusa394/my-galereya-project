@@ -5,12 +5,27 @@ module.exports = async function handler(req, res) {
 
   const BOT_TOKEN = process.env.BOT_TOKEN;
   const WEBAPP_URL = (process.env.WEBAPP_URL || 'https://my-galereya-project.vercel.app').replace(/\/$/, '');
+  const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 
   try {
     const update = req.body;
+    const text = update?.message?.text;
 
-    if (update?.message?.text?.startsWith('/start')) {
+    if (text?.startsWith('/start')) {
       const chatId = update.message.chat.id;
+      const source = text.split(' ')[1] || 'прямой переход';
+
+      if (ADMIN_CHAT_ID) {
+        const username = update.message.from?.username;
+        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: ADMIN_CHAT_ID,
+            text: `🔔 Переход в галерею\nИсточник: ${source}\nПользователь: ${username ? '@' + username : chatId}`
+          })
+        });
+      }
 
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
