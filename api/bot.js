@@ -32,11 +32,14 @@ module.exports = async function handler(req, res) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: chatId,
-          text: '🎨 Галерея Primavera\n\nАвторские картины маслом для вашего интерьера.\n\nПримерьте любую картину на свою стену — загрузите фото и выберите идеальный вариант.',
+          text: '🎨 Галерея Primavera\n\nАвторские картины маслом для вашего интерьера.\n\nПримерьте любую картину на свою стену — загрузите фото и выберите идеальный вариант.\n\nПродолжая, вы соглашаетесь с Политикой конфиденциальности.',
           reply_markup: {
             inline_keyboard: [[{
               text: '🖼 Открыть галерею',
               web_app: { url: WEBAPP_URL }
+            }], [{
+              text: '📄 Политика конфиденциальности',
+              url: `${WEBAPP_URL}/privacy.html`
             }]]
           }
         })
