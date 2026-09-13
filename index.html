@@ -3,15 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Галерея — Авторские картины маслом</title>
+  <title>Галерея ПРИМАVERA — авторские картины маслом</title>
+  <meta name="description" content="Авторские картины маслом: пейзажи, натюрморты, цветы. Примерьте картину на фото своей стены и выберите раму до покупки.">
+  <link rel="canonical" href="https://my-galereya-project.vercel.app/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Галерея ПРИМАVERA — авторские картины маслом">
+  <meta property="og:description" content="Примерьте картину на фото своей стены и выберите раму до покупки.">
+  <meta property="og:image" content="https://my-galereya-project.vercel.app/images/og-cover.jpg">
+  <meta property="og:url" content="https://my-galereya-project.vercel.app/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23F3EBE2'/%3E%3Crect x='7' y='6' width='18' height='20' rx='1.5' fill='none' stroke='%23D4916E' stroke-width='2'/%3E%3Cpath d='M10 21l4.5-6 3 4 2.5-3 2 5z' fill='%231A1A1A'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       --bg:           #F3EBE2;
+      --bg-soft:      #E9DFD3;
       --bg-dark:      #1A1A1A;
       --text:         #1A1A1A;
       --text-sec:     #3D3D3D;
@@ -19,13 +29,15 @@
       --border:       #C5BEB6;
       --accent:       #D4916E;
       --font-head:    'Playfair Display', serif;
-      --font-body:    'Inter', sans-serif;
+      --font-body:    'Outfit', system-ui, sans-serif;
       --r-btn:        4px;
       --r-card:       4px;
       --pad-section:  80px;
     }
 
     html { scroll-behavior: smooth; }
+
+    section[id], [id="catalog"], [id="tryout"], [id="artists"], [id="reviews"], [id="contact"] { scroll-margin-top: 80px; }
 
     body {
       background: var(--bg);
@@ -306,8 +318,10 @@
 
     /* ── WALL TRYOUT ── */
     .tryout {
-      background: var(--bg-dark);
-      color: var(--text-inv);
+      background: var(--bg-soft);
+      color: var(--text);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
       padding: var(--pad-section) 40px;
     }
 
@@ -339,7 +353,7 @@
 
     .tryout__text {
       font-size: 16px;
-      color: rgba(255,255,255,0.65);
+      color: var(--text-sec);
       line-height: 1.75;
       margin-bottom: 32px;
     }
@@ -357,7 +371,7 @@
       gap: 12px;
       align-items: flex-start;
       font-size: 15px;
-      color: rgba(255,255,255,0.7);
+      color: var(--text-sec);
     }
 
     .tryout__steps li span.step-num {
@@ -376,8 +390,8 @@
     }
 
     .tryout__canvas-placeholder {
-      background: rgba(255,255,255,0.04);
-      border: 2px dashed rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.55);
+      border: 2px dashed var(--border);
       border-radius: 8px;
       min-height: 340px;
       display: flex;
@@ -385,7 +399,7 @@
       align-items: center;
       justify-content: center;
       gap: 16px;
-      color: rgba(255,255,255,0.4);
+      color: var(--text-sec);
       font-size: 14px;
       text-align: center;
       padding: 32px;
@@ -426,7 +440,7 @@
       font-weight: 600;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.45);
+      color: var(--text-sec);
       margin-bottom: 8px;
     }
 
@@ -447,17 +461,17 @@
       font-weight: 600;
       cursor: pointer;
       transition: all 0.15s;
-      background: transparent;
-      color: rgba(255,255,255,0.6);
-      border: 1.5px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.5);
+      color: var(--text-sec);
+      border: 1.5px solid var(--border);
     }
 
-    .frame-btn:hover { border-color: rgba(255,255,255,0.4); color: #fff; }
+    .frame-btn:hover { border-color: var(--text); color: var(--text); }
 
     .frame-btn--active {
-      background: rgba(255,255,255,0.12);
-      color: #fff;
-      border-color: rgba(255,255,255,0.5);
+      background: var(--text);
+      color: var(--text-inv);
+      border-color: var(--text);
     }
 
     .frame-swatch {
@@ -977,10 +991,10 @@
 
   </style>
 </head>
-<body>
+<body id="top">
 
 <nav class="nav">
-  <a href="#" class="nav__logo">Галерея ПРИМАVERA</a>
+  <a href="#top" class="nav__logo">Галерея ПРИМАVERA</a>
   <ul class="nav__links">
     <li><a href="#catalog">Каталог</a></li>
     <li><a href="#artists">Художники</a></li>
@@ -1037,7 +1051,7 @@
 </div>
 
 <div class="tagline-bar">
-  <p class="tagline-bar__text">Авторские картины маслом — примерьте на свою стену</p>
+  <h1 class="tagline-bar__text">Авторские картины маслом, примерьте на свою стену</h1>
 </div>
 
 <section id="catalog" class="section">
@@ -1068,8 +1082,8 @@
       <p class="tryout__text">Для точного масштаба укажите ширину вашей стены:</p>
       <div style="display:flex;gap:12px;align-items:center;margin-bottom:32px">
         <input type="number" id="wallWidthM" min="1" max="20" step="0.1" value="3"
-          style="padding:10px 14px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.3);border-radius:4px;color:#fff;font-family:var(--font-body);font-size:15px;width:90px;outline:none">
-        <span style="color:rgba(255,255,255,0.65);font-size:15px">м — ширина стены</span>
+          style="padding:10px 14px;background:#fff;border:1.5px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font-body);font-size:15px;width:90px;outline:none">
+        <span style="color:var(--text-sec);font-size:15px">м, ширина стены</span>
       </div>
     </div>
     <div>
@@ -1079,7 +1093,7 @@
           <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
           <polyline points="21 15 16 10 5 21"/>
         </svg>
-        <span style="font-size:16px;font-weight:600;color:rgba(255,255,255,0.85)">Загрузить фото стены</span>
+        <span style="font-size:16px;font-weight:600;color:var(--text)">Загрузить фото стены</span>
         <span>Нажмите или перетащите файл</span>
         <input type="file" id="wallPhotoInput" accept="image/*" style="display:none">
       </label>
@@ -1107,10 +1121,10 @@
         </div>
       </div>
       <div id="tryoutControls" class="tryout__controls">
-        <button class="btn btn--outline-inv" id="sizeUp">+ Больше</button>
-        <button class="btn btn--outline-inv" id="sizeDown">– Меньше</button>
+        <button class="btn btn--outline" id="sizeUp">+ Больше</button>
+        <button class="btn btn--outline" id="sizeDown">– Меньше</button>
         <button class="btn btn--accent" id="saveResult">Скачать</button>
-        <label class="btn btn--outline-inv" style="cursor:pointer;margin-left:auto">
+        <label class="btn btn--outline" style="cursor:pointer;margin-left:auto">
           Другое фото
           <input type="file" id="wallPhotoInputAlt" accept="image/*" style="display:none">
         </label>
@@ -1136,7 +1150,7 @@
 <footer id="contact" class="footer">
   <div class="footer__inner">
     <div>
-      <a href="#" class="footer__logo">Галерея ПРИМАVERA</a>
+      <a href="#top" class="footer__logo">Галерея ПРИМАVERA</a>
       <p class="footer__tagline">Авторские картины маслом</p>
     </div>
     <div>
@@ -1689,11 +1703,28 @@
     drawCanvas();
   });
 
+  // Сообщение об ошибке показываем рядом с кнопкой, а не системным окном
+  function showSaveError(text) {
+    const btn = document.getElementById('saveResult');
+    let box = document.getElementById('saveError');
+    if (!box) {
+      box = document.createElement('p');
+      box.id = 'saveError';
+      box.setAttribute('role', 'status');
+      box.style.cssText = 'margin-top:10px;font-size:13px;line-height:1.5;color:var(--text-sec)';
+      btn.insertAdjacentElement('afterend', box);
+    }
+    box.textContent = text;
+  }
+
   document.getElementById('saveResult').addEventListener('click', () => {
     const link = document.createElement('a');
     link.download = 'примерка-картины.png';
     try { link.href = canvas.toDataURL('image/png'); }
-    catch(e) { alert('Не удалось сохранить — сделайте скриншот экрана'); return; }
+    catch (e) {
+      showSaveError('Браузер не дал сохранить картинку. Сделайте снимок экрана, получится то же самое.');
+      return;
+    }
     link.click();
   });
 
