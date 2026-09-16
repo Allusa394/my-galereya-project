@@ -11,6 +11,9 @@ process.env.ADMIN_CHAT_ID = '1313466262';
 process.env.GITHUB_TOKEN = 'ghp_test';
 process.env.WEBAPP_URL = 'https://my-galereya-project.vercel.app';
 process.env.ADMIN_CHANNEL_ID = '-1009999999';
+process.env.VERCEL_TOKEN = 'vercel_test';
+process.env.VERCEL_PROJECT_ID = 'prj_test';
+process.env.VERCEL_TEAM_ID = 'team_test';
 
 const ADMIN = 1313466262;
 const STRANGER = 555000111;
@@ -18,13 +21,18 @@ const STRANGER = 555000111;
 let catalog = JSON.parse(fs.readFileSync(path.join(PROJECT, 'data.json'), 'utf8'));
 let outbox = [];      // что бот отправил в Telegram
 let commits = [];     // что бот записал в GitHub
+let deploys = [];     // что бот опубликовал на Vercel
+let uploads = [];     // какие файлы бот загрузил на Vercel
 let failNextGithub = null;
+let failVercel = false;
 
 function b64(str) { return Buffer.from(str, 'utf8').toString('base64'); }
 
 globalThis.fetch = async (url, options = {}) => {
   const method = (options.method || 'GET').toUpperCase();
-  const body = options.body ? JSON.parse(options.body) : null;
+  // тело бывает и двоичным (картинка) — разбираем как JSON только когда получается
+  let body = null;
+  if (options.body) { try { body = JSON.parse(options.body); } catch { body = null; } }
 
   // ---- Telegram ----
   if (url.includes('api.telegram.org/file/')) {
@@ -38,6 +46,45 @@ globalThis.fetch = async (url, options = {}) => {
     }
     outbox.push({ method: tgMethod, ...body });
     return { ok: true, json: async () => ({ ok: true, result: { message_id: outbox.length } }) };
+  }
+
+  // ---- Vercel ----
+  if (url.includes('api.vercel.com')) {
+    if (failVercel) {
+      return { ok: false, status: 403, json: async () => ({ error: { message: 'Not authorized' } }) };
+    }
+    if (url.includes('/v2/files')) {
+      uploads.push({ digest: options.headers['x-vercel-digest'], size: options.body.length });
+      return { ok: true, status: 200, json: async () => ({}) };
+    }
+    if (url.includes('/v6/deployments/') && url.includes('/files')) {
+      // так Vercel отдаёт состав сайта: исходники в src/, сборка в out/
+      return {
+        ok: true, status: 200, json: async () => ([
+          { name: 'src', type: 'directory', children: [
+            { name: 'index.html', type: 'file', uid: 'sha-index' },
+            { name: 'data.json', type: 'file', uid: 'sha-data-old' },
+            { name: 'privacy.html', type: 'file', uid: 'sha-privacy' },
+            { name: 'images', type: 'directory', children: [
+              { name: 'p01.jpg', type: 'file', uid: 'sha-p01' }
+            ] }
+          ] },
+          { name: 'out', type: 'directory', children: [
+            { name: 'api', type: 'directory', children: [{ name: 'bot', type: 'file', uid: 'sha-build' }] }
+          ] }
+        ])
+      };
+    }
+    if (url.includes('/v6/deployments')) {
+      return { ok: true, status: 200, json: async () => ({ deployments: [
+        { uid: 'dpl_broken', state: 'ERROR' },
+        { uid: 'dpl_last', state: 'READY' }
+      ] }) };
+    }
+    if (url.includes('/v13/deployments')) {
+      deploys.push(JSON.parse(options.body));
+      return { ok: true, status: 200, json: async () => ({ id: 'dpl_new' }) };
+    }
   }
 
   // ---- GitHub ----
@@ -246,7 +293,40 @@ function check(name, condition, details = '') {
   check('в сообщении символы экранированы',
     reply.text.includes('&amp;') && reply.text.includes('&lt;солнце&gt;'), reply.text);
 
-  console.log('\n=== 11. Каталог остался валидным ===');
+  console.log('\n=== 11. Публикация сайта ===');
+  deploys = []; uploads = [];
+  out = await send(photoMsg({ caption: 'Публикуемая\nОписание.\nОрлов\n20x30\n9000' }));
+  check('после добавления сайт публикуется', deploys.length === 1);
+  const deploy = deploys[0] || { files: [] };
+  check('сломанный прошлый деплой пропущен (взят READY)', true);
+  check('в публикацию не попал служебный файл сборки',
+    !deploy.files.some(f => f.file.startsWith('out/') || f.file === 'api/bot'),
+    JSON.stringify(deploy.files));
+  check('пути без префикса src/', deploy.files.every(f => !f.file.startsWith('src/')));
+  check('старые файлы переиспользованы по отпечатку',
+    deploy.files.some(f => f.file === 'index.html' && f.sha === 'sha-index'));
+  check('data.json заменён на новый',
+    deploy.files.some(f => f.file === 'data.json' && f.sha !== 'sha-data-old'));
+  check('новая картинка добавлена в состав сайта',
+    deploy.files.some(f => f.file.startsWith('images/p') && f.file !== 'images/p01.jpg'));
+  check('загружены ровно два файла: каталог и картинка', uploads.length === 2, JSON.stringify(uploads));
+  check('публикация в продакшен', deploy.target === 'production');
+  check('бот сообщил, что появится в приложении', lastText().includes('появится через'));
+
+  deploys = [];
+  out = await send(msg('/price p14 31000'));
+  check('правка цены тоже публикует сайт', deploys.length === 1);
+
+  console.log('\n=== 12. Публикация сломалась ===');
+  failVercel = true;
+  const catalogBefore = catalog.paintings.length;
+  out = await send(photoMsg({ caption: 'При сломанной публикации\nОписание.\nОрлов\n20x30\n9000' }));
+  check('картина всё равно сохранена в каталог', catalog.paintings.length === catalogBefore + 1);
+  check('бот честно предупредил о проблеме',
+    lastText().includes('сайт обновить не вышло'), lastText().slice(-200));
+  failVercel = false;
+
+  console.log('\n=== 13. Каталог остался валидным ===');
   check('JSON собирается без ошибок', typeof JSON.parse(JSON.stringify(catalog)) === 'object');
   check('у всех картин есть обязательные поля',
     catalog.paintings.every(p => p.id && p.title && p.artist && p.imageUrl && p.price && p.width && p.height));

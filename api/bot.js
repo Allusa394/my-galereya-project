@@ -4,13 +4,17 @@
 // Для клиентов: /start → кнопка «Открыть галерею»
 // Для Аллы:     добавление и правка картин прямо из Telegram
 //
-// Картины хранятся в data.json на GitHub. Бот пишет туда через
-// GitHub API — Vercel видит новый коммит и пересобирает сайт.
+// Картины хранятся в data.json на GitHub — бот пишет туда через GitHub API,
+// а затем сам публикует новую версию сайта через Vercel API (проект не
+// связан с репозиторием, поэтому коммит сам по себе сборку не запускает).
 //
 // Переменные окружения (Vercel → Settings → Environment Variables):
 //   BOT_TOKEN          — токен бота от @BotFather
 //   ADMIN_CHAT_ID      — Telegram ID администратора (только он правит каталог)
 //   GITHUB_TOKEN       — токен с правом записи в репозиторий
+//   VERCEL_TOKEN       — токен Vercel для публикации сайта
+//   VERCEL_PROJECT_ID  — id проекта на Vercel
+//   VERCEL_TEAM_ID     — id команды на Vercel
 //   WEBAPP_URL         — адрес приложения (по умолчанию my-galereya-project.vercel.app)
 //   ADMIN_CHANNEL_ID   — (необязательно) id служебного канала для постов-карточек
 // ============================================================
@@ -105,6 +109,130 @@ async function commitCatalog(catalog, message, image) {
   });
 
   return commit.sha;
+}
+
+// ---------- Публикация сайта ----------
+//
+// Проект не связан с GitHub-репозиторием, поэтому коммит сам по себе сайт
+// не пересобирает. Бот публикует новую версию сам: берёт файлы последнего
+// деплоя, подменяет в нём data.json (и добавляет новую картинку) и просит
+// Vercel собрать из этого набора. Загружаются только изменённые файлы —
+// остальные Vercel берёт из своего хранилища по их отпечатку (sha1).
+
+const crypto = require('crypto');
+
+function vercelReady() {
+  return Boolean(process.env.VERCEL_TOKEN && process.env.VERCEL_PROJECT_ID);
+}
+
+function vercelQuery(extra = '') {
+  const team = process.env.VERCEL_TEAM_ID;
+  return (team ? `?teamId=${team}` : '?') + (extra ? '&' + extra : '');
+}
+
+async function vercel(path, options = {}) {
+  const resp = await fetch(`https://api.vercel.com${path}`, {
+    ...options,
+    headers: {
+      'Authorization': `Bearer ${process.env.VERCEL_TOKEN}`,
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    }
+  });
+  const body = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    throw new Error(`Vercel ${resp.status}: ${body.error?.message || 'не удалось опубликовать'}`);
+  }
+  return body;
+}
+
+// Кладёт содержимое файла в хранилище Vercel, возвращает его отпечаток.
+async function uploadFile(buffer) {
+  const sha = crypto.createHash('sha1').update(buffer).digest('hex');
+  const resp = await fetch(`https://api.vercel.com/v2/files${vercelQuery()}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.VERCEL_TOKEN}`,
+      'Content-Type': 'application/octet-stream',
+      'x-vercel-digest': sha,
+      'Content-Length': String(buffer.length)
+    },
+    body: buffer
+  });
+  if (!resp.ok) {
+    throw new Error(`Vercel ${resp.status}: не удалось загрузить файл`);
+  }
+  return sha;
+}
+
+// Собирает плоский список исходных файлов последнего деплоя.
+function flattenFiles(nodes, prefix = '') {
+  const out = [];
+  for (const node of nodes || []) {
+    const path = (prefix + '/' + node.name).replace(/^\//, '');
+    if (node.type === 'directory') {
+      out.push(...flattenFiles(node.children, path));
+    } else if (path.startsWith('src/')) {
+      // out/... — это результат сборки, в новый деплой его передавать нельзя
+      out.push({ file: path.slice(4), sha: node.uid });
+    }
+  }
+  return out;
+}
+
+async function publishSite(catalog, image) {
+  const list = await vercel(`/v6/deployments${vercelQuery(`projectId=${process.env.VERCEL_PROJECT_ID}&limit=5`)}`);
+  const base = (list.deployments || []).find(d => d.state !== 'ERROR' && d.state !== 'CANCELED');
+  if (!base) throw new Error('не нашёл предыдущую версию сайта');
+
+  const tree = await vercel(`/v6/deployments/${base.uid}/files${vercelQuery()}`);
+  const files = flattenFiles(Array.isArray(tree) ? tree : tree.files);
+  if (!files.length) throw new Error('не удалось прочитать состав сайта');
+
+  const dataSha = await uploadFile(Buffer.from(JSON.stringify(catalog, null, 2) + '\n', 'utf8'));
+  const dataEntry = files.find(f => f.file === 'data.json');
+  if (dataEntry) dataEntry.sha = dataSha;
+  else files.push({ file: 'data.json', sha: dataSha });
+
+  if (image) {
+    const imageSha = await uploadFile(Buffer.from(image.base64, 'base64'));
+    const existing = files.find(f => f.file === image.path);
+    if (existing) existing.sha = imageSha;
+    else files.push({ file: image.path, sha: imageSha });
+  }
+
+  const deployment = await vercel(`/v13/deployments${vercelQuery('forceNew=1')}`, {
+    method: 'POST',
+    body: JSON.stringify({
+      name: 'my-galereya-project',
+      project: process.env.VERCEL_PROJECT_ID,
+      target: 'production',
+      files
+    })
+  });
+
+  return deployment.id;
+}
+
+// Сохраняет изменения в репозиторий и сразу публикует сайт.
+// Если публикация недоступна — каталог всё равно записан, о чём и сообщаем.
+async function saveAndPublish(catalog, message, image) {
+  await commitCatalog(catalog, message, image);
+  if (!vercelReady()) return { published: false, reason: 'публикация сайта не настроена' };
+
+  try {
+    await publishSite(catalog, image);
+    return { published: true };
+  } catch (err) {
+    console.error('publish error:', err);
+    return { published: false, reason: err.message };
+  }
+}
+
+function publishNote(result) {
+  return result.published
+    ? '\n\nВ приложении появится через 1–2 минуты.'
+    : `\n\n⚠️ В каталог записал, но сайт обновить не вышло: ${esc(result.reason)}`;
 }
 
 // ---------- Вспомогательное ----------
@@ -237,12 +365,12 @@ async function addPainting({ title, description, artistLabel, width, height, pri
     imageUrl: imagePath
   });
 
-  await commitCatalog(catalog, `update: добавлена картина «${title.trim()}» (из Telegram)`, {
+  const result = await saveAndPublish(catalog, `update: добавлена картина «${title.trim()}» (из Telegram)`, {
     path: imagePath,
     base64: photo.base64
   });
 
-  return { id, label, isNewArtist: !known };
+  return { id, label, isNewArtist: !known, publish: result };
 }
 
 // ---------- Мастер: пошаговый опрос ----------
@@ -361,8 +489,8 @@ async function finishWizard(chatId, draft, fileId) {
     `✅ Готово! Картина <b>${esc(draft['Название'])}</b> добавлена под номером <code>${result.id}</code>.\n\n` +
     `Художник: ${esc(result.label)}\n` +
     `Размер: ${size.width}×${size.height} см\n` +
-    `Цена: ${formatPrice(price)}\n\n` +
-    `В приложении появится через 1–2 минуты.` +
+    `Цена: ${formatPrice(price)}` +
+    publishNote(result.publish) +
     (result.isNewArtist
       ? `\n\n⚠️ Художник «${esc(result.label)}» новый — в разделе «Художники» его карточки пока нет, фото и биографию нужно добавить отдельно.`
       : ''));
@@ -447,8 +575,8 @@ async function cmdSold(chatId, id, sold) {
     delete painting.sold;
   }
 
-  await commitCatalog(catalog, `update: «${painting.title}» — ${sold ? 'продана' : 'снова в продаже'} (из Telegram)`);
-  await say(chatId, `${sold ? '🔴' : '🟢'} «${esc(painting.title)}» — ${sold ? 'помечена проданной' : 'вернулась в продажу'}. Обновится через 1–2 минуты.`);
+  const result = await saveAndPublish(catalog, `update: «${painting.title}» — ${sold ? 'продана' : 'снова в продаже'} (из Telegram)`);
+  await say(chatId, `${sold ? '🔴' : '🟢'} «${esc(painting.title)}» — ${sold ? 'помечена проданной' : 'вернулась в продажу'}.` + publishNote(result));
 }
 
 async function cmdPrice(chatId, id, priceRaw) {
@@ -473,8 +601,8 @@ async function cmdPrice(chatId, id, priceRaw) {
   const was = painting.price;
   painting.price = price;
 
-  await commitCatalog(catalog, `update: цена «${painting.title}» — ${price} (из Telegram)`);
-  await say(chatId, `💰 «${esc(painting.title)}»: ${formatPrice(was)} → <b>${formatPrice(price)}</b>. Обновится через 1–2 минуты.`);
+  const result = await saveAndPublish(catalog, `update: цена «${painting.title}» — ${price} (из Telegram)`);
+  await say(chatId, `💰 «${esc(painting.title)}»: ${formatPrice(was)} → <b>${formatPrice(price)}</b>.` + publishNote(result));
 }
 
 async function cmdDeleteAsk(chatId, id) {
@@ -513,8 +641,8 @@ async function cmdDeleteConfirm(chatId, id) {
   }
 
   catalog.paintings = catalog.paintings.filter(p => p.id !== painting.id);
-  await commitCatalog(catalog, `update: удалена картина «${painting.title}» (из Telegram)`);
-  await say(chatId, `🗑 «${esc(painting.title)}» удалена из галереи. Обновится через 1–2 минуты.`);
+  const result = await saveAndPublish(catalog, `update: удалена картина «${painting.title}» (из Telegram)`);
+  await say(chatId, `🗑 «${esc(painting.title)}» удалена из галереи.` + publishNote(result));
 }
 
 // ---------- Быстрый режим: фото с подписью из пяти строк ----------
@@ -557,8 +685,8 @@ async function quickAdd(chatId, message) {
 
   await say(chatId,
     `✅ Добавлена картина <b>${esc(title)}</b> — номер <code>${result.id}</code>.\n` +
-    `${esc(result.label)}, ${size.width}×${size.height} см, ${formatPrice(price)}\n\n` +
-    `В приложении появится через 1–2 минуты.` +
+    `${esc(result.label)}, ${size.width}×${size.height} см, ${formatPrice(price)}` +
+    publishNote(result.publish) +
     (result.isNewArtist ? `\n\n⚠️ Художник «${esc(result.label)}» новый — карточки в разделе «Художники» у него пока нет.` : ''));
 }
 
