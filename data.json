@@ -209,7 +209,8 @@
       "height": 35,
       "year": 2025,
       "price": 45000,
-      "imageUrl": "images/p12.jpg"
+      "imageUrl": "images/p12.jpg",
+      "sold": true
     }
   ]
 }
