@@ -411,6 +411,98 @@ async function cmdList(chatId) {
     `\n\n🟢 в продаже: ${catalog.paintings.length - sold}   🔴 продано: ${sold}`);
 }
 
+// ---------- Правка картин ----------
+
+async function cmdSold(chatId, id, sold) {
+  if (!id) {
+    await say(chatId, `Нужен номер картины: <code>${sold ? '/sold' : '/unsold'} p03</code>. Номера — /list`);
+    return;
+  }
+
+  const catalog = await readCatalog();
+  const painting = findPainting(catalog, id);
+
+  if (!painting) {
+    await say(chatId, `❌ Картины <code>${id}</code> нет. Посмотри номера: /list`);
+    return;
+  }
+
+  if (sold) {
+    painting.sold = true;
+  } else {
+    delete painting.sold;
+  }
+
+  await commitCatalog(catalog, `update: «${painting.title}» — ${sold ? 'продана' : 'снова в продаже'} (из Telegram)`);
+  await say(chatId, `${sold ? '🔴' : '🟢'} «${painting.title}» — ${sold ? 'помечена проданной' : 'вернулась в продажу'}. Обновится через 1–2 минуты.`);
+}
+
+async function cmdPrice(chatId, id, priceRaw) {
+  if (!id) {
+    await say(chatId, 'Нужен номер и новая цена: <code>/price p03 30000</code>. Номера — /list');
+    return;
+  }
+
+  const price = parsePrice(priceRaw);
+  if (!price) {
+    await say(chatId, `❌ Не понял цену «${priceRaw}». Нужно так: <code>/price p03 30000</code>`);
+    return;
+  }
+
+  const catalog = await readCatalog();
+  const painting = findPainting(catalog, id);
+  if (!painting) {
+    await say(chatId, `❌ Картины <code>${id}</code> нет. Посмотри номера: /list`);
+    return;
+  }
+
+  const was = painting.price;
+  painting.price = price;
+
+  await commitCatalog(catalog, `update: цена «${painting.title}» — ${price} (из Telegram)`);
+  await say(chatId, `💰 «${painting.title}»: ${formatPrice(was)} → <b>${formatPrice(price)}</b>. Обновится через 1–2 минуты.`);
+}
+
+async function cmdDeleteAsk(chatId, id) {
+  if (!id) {
+    await say(chatId, 'Нужен номер картины: <code>/del p03</code>. Номера — /list');
+    return;
+  }
+
+  const catalog = await readCatalog();
+  const painting = findPainting(catalog, id);
+
+  if (!painting) {
+    await say(chatId, `❌ Картины <code>${id}</code> нет. Посмотри номера: /list`);
+    return;
+  }
+
+  await say(chatId,
+    `Удалить «<b>${painting.title}</b>» (${formatPrice(painting.price)}) из галереи?\n\nЭто действие не отменить.`,
+    {
+      reply_markup: {
+        inline_keyboard: [[
+          { text: '🗑 Удалить', callback_data: `del:${painting.id}` },
+          { text: 'Отмена', callback_data: 'cancel' }
+        ]]
+      }
+    });
+}
+
+async function cmdDeleteConfirm(chatId, id) {
+  const catalog = await readCatalog();
+  const painting = findPainting(catalog, id);
+
+  if (!painting) {
+    await say(chatId, `❌ Картины <code>${id}</code> уже нет.`);
+    return;
+  }
+
+  catalog.paintings = catalog.paintings.filter(p => p.id !== painting.id);
+  await commitCatalog(catalog, `update: удалена картина «${painting.title}» (из Telegram)`);
+  await say(chatId, `🗑 «${painting.title}» удалена из галереи. Обновится через 1–2 минуты.`);
+}
+
 // ---------- Быстрый режим: фото с подписью из пяти строк ----------
 
 const QUICK_FORMAT =
@@ -515,14 +607,29 @@ async function handleMessage(message, adminId) {
     return;
   }
 
-  if (text === '/add') {
-    await askNextStep(chatId, {});
-  } else if (text === '/list') {
-    await cmdList(chatId);
-  } else if (text === '/help' || text === '/admin') {
-    await cmdHelp(chatId);
-  } else if (text.startsWith('/')) {
-    await cmdHelp(chatId);
+  const [command, ...args] = text.split(/\s+/);
+
+  switch (command) {
+    case '/add':
+      await askNextStep(chatId, {});
+      break;
+    case '/list':
+      await cmdList(chatId);
+      break;
+    case '/sold':
+      await cmdSold(chatId, args[0], true);
+      break;
+    case '/unsold':
+      await cmdSold(chatId, args[0], false);
+      break;
+    case '/price':
+      await cmdPrice(chatId, args[0], args[1]);
+      break;
+    case '/del':
+      await cmdDeleteAsk(chatId, args[0]);
+      break;
+    default:
+      if (command.startsWith('/')) await cmdHelp(chatId);
   }
 }
 
@@ -570,6 +677,25 @@ async function handleCallback(callback, adminId) {
   if (!isAdmin || !chatId) return;
 
   const data = String(callback.data || '');
+
+  if (data === 'cancel') {
+    await tg('editMessageText', {
+      chat_id: chatId,
+      message_id: callback.message.message_id,
+      text: 'Отменено — ничего не изменилось.'
+    }).catch(() => {});
+    return;
+  }
+
+  if (data.startsWith('del:')) {
+    await tg('editMessageReplyMarkup', {
+      chat_id: chatId,
+      message_id: callback.message.message_id,
+      reply_markup: { inline_keyboard: [] }
+    }).catch(() => {});
+    await cmdDeleteConfirm(chatId, data.slice(4));
+    return;
+  }
 
   if (data.startsWith('artist:')) {
     const draft = parseDraft(callback.message.text || '');
