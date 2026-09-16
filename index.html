@@ -1299,7 +1299,8 @@
         allArtistsData = aRows;
         renderArtists(aRows);
       } else {
-        const res = await fetch('data.json');
+        // Каталог пополняется из Telegram — берём всегда свежий, минуя кэш Телеграма
+        const res = await fetch('data.json?v=' + Date.now(), { cache: 'no-store' });
         const data = await res.json();
         paintings = data.paintings.map(p => ({ ...p, image: p.imageUrl }));
         allArtistsData = data.artists;
