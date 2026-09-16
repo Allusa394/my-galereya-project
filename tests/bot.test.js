@@ -237,7 +237,7 @@ function check(name, condition, details = '') {
   check('бот предупредил о дубле', lastText().includes('уже есть в каталоге'));
 
   out = await send(photoMsg({ caption: 'Только название' }));
-  check('неполная подпись — подсказка формата', lastText().includes('Не хватает данных'));
+  check('неполная подпись — бот переходит к вопросам', lastText().includes('Шаг 1 из 5'), lastText().slice(0, 120));
   check('в каталог ничего не попало', catalog.paintings.length === countBefore);
 
   out = await send(photoMsg({ caption: 'Картина\nОписание\nСоколов\nбольшая\n28000' }));
@@ -280,6 +280,11 @@ function check(name, condition, details = '') {
   out = await send({ channel_post: { chat: { id: -1001111111 }, photo: [{ file_id: 'big' }], caption: 'Чужой канал\nОписание.\nОрлов\n50x70\n39000' } });
   check('пост в чужом канале проигнорирован', catalog.paintings.length === beforeChannel + 1);
 
+  out = await send({ channel_post: { chat: { id: -1009999999 }, photo: [{ file_id: 'big' }], caption: 'Без данных' } });
+  check('в канале неполная подпись — подсказка формата (диалога там нет)',
+    lastText().includes('Не хватает данных'), lastText().slice(0, 120));
+  check('картина из неполного поста не добавлена', catalog.paintings.length === beforeChannel + 1);
+
   console.log('\n=== 9. Сломанный доступ к GitHub ===');
   failNextGithub = 401;
   out = await send(msg('/list'));
@@ -292,6 +297,46 @@ function check(name, condition, details = '') {
   const reply = outbox.filter(o => o.method === 'sendMessage').pop();
   check('в сообщении символы экранированы',
     reply.text.includes('&amp;') && reply.text.includes('&lt;солнце&gt;'), reply.text);
+
+  console.log('\n=== 10б. Сначала фото, потом данные (как делает Алла) ===');
+  const beforeFlow = catalog.paintings.length;
+  out = await send(photoMsg({}));                       // фото без подписи
+  let d2 = draftOf(out);
+  check('фото без подписи запускает мастер', d2.includes('Шаг 1 из 5'), d2);
+  check('бот отметил, что фото принято', d2.includes('Фото: принято'));
+  const hiddenLink = out.filter(o => o.method === 'sendMessage').pop().text.match(/t\.me\/\?f=([^"]+)/);
+  check('фото запомнено в сообщении', Boolean(hiddenLink), 'ссылки нет');
+
+  // как Telegram присылает ответ на такое сообщение: текст без разметки + entities
+  const draftMsg = (text, url) => ({
+    text: text.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'),
+    entities: url ? [{ type: 'text_link', url }] : []
+  });
+  let url2 = 'https://t.me/?f=' + hiddenLink[1];
+
+  out = await send(msg('Цветы', ADMIN, { reply_to_message: draftMsg(d2, url2) }));
+  d2 = draftOf(out);
+  check('название принято, фото не потерялось',
+    d2.includes('Название: Цветы') && d2.includes('Фото: принято'));
+
+  out = await send(msg('Букет в вазе.', ADMIN, { reply_to_message: draftMsg(d2, url2) }));
+  d2 = draftOf(out);
+  out = await send({ callback_query: { id: 'c9', from: { id: ADMIN }, data: 'artist:0',
+    message: { chat: { id: ADMIN }, message_id: 30, ...draftMsg(d2, url2) } } });
+  d2 = draftOf(out);
+  check('художник выбран, фото на месте', d2.includes('Художник: Андрей Соколов') && d2.includes('Фото: принято'));
+
+  out = await send(msg('40x60', ADMIN, { reply_to_message: draftMsg(d2, url2) }));
+  d2 = draftOf(out);
+  out = await send(msg('45000', ADMIN, { reply_to_message: draftMsg(d2, url2) }));
+  const flowAdded = catalog.paintings[catalog.paintings.length - 1];
+  check('после последнего ответа картина добавлена сразу',
+    catalog.paintings.length === beforeFlow + 1);
+  check('данные собраны верно',
+    flowAdded.title === 'Цветы' && flowAdded.price === 45000 &&
+    flowAdded.width === 40 && flowAdded.height === 60 && flowAdded.artist === 'sokolov',
+    JSON.stringify(flowAdded));
+  check('второй раз фото не просили', !lastText().includes('пришли фото'));
 
   console.log('\n=== 11. Публикация сайта ===');
   deploys = []; uploads = [];

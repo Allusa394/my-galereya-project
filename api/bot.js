@@ -31,7 +31,12 @@ async function tg(method, payload) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
-  return resp.json();
+  const body = await resp.json();
+  // Раньше отказ Telegram проходил незамеченным: бот «молчал», а причина терялась.
+  if (!body.ok) {
+    console.error('telegram error:', method, resp.status, body.description);
+  }
+  return body;
 }
 
 function say(chatId, text, extra = {}) {
@@ -395,8 +400,23 @@ function artistNames(catalog) {
 }
 
 function renderDraft(draft, hint) {
-  const lines = STEPS.map(step => `${step.key}: ${draft[step.key] || EMPTY}`);
-  return `${DRAFT_HEADER}\n\n${lines.join('\n')}\n\n${hint}`;
+  const lines = STEPS.map(step => `${esc(step.key)}: ${esc(draft[step.key] || EMPTY)}`);
+  const head = draft.photo ? `${DRAFT_HEADER}\nФото: принято ✅` : DRAFT_HEADER;
+  // Фото запоминаем в самом сообщении — в невидимой ссылке. Так бот «помнит»
+  // присланную картинку между шагами, не заводя базу данных.
+  const hidden = draft.photo ? `<a href="https://t.me/?f=${encodeURIComponent(draft.photo)}">​</a>` : '';
+  return `${head}\n\n${lines.join('\n')}\n\n${esc(hint)}${hidden}`;
+}
+
+// Достаёт спрятанное фото из сообщения-черновика.
+function photoFromDraftMessage(message) {
+  const link = (message?.entities || []).find(e => e.type === 'text_link' && e.url.includes('t.me/?f='));
+  if (!link) return null;
+  try {
+    return decodeURIComponent(link.url.split('f=')[1]);
+  } catch {
+    return null;
+  }
 }
 
 function parseDraft(text) {
@@ -425,22 +445,28 @@ function isDraftMessage(text) {
 // сообщения — поэтому боту не нужна база данных, чтобы помнить диалог.
 async function askNextStep(chatId, draft) {
   const step = currentStep(draft);
+  const total = draft.photo ? STEPS.length : STEPS.length + 1;
 
   if (!step) {
-    await sayPlain(chatId, renderDraft(draft, 'Шаг 6 из 6 — пришли фото картины ответом на это сообщение'), {
+    // Фото уже есть — значит собраны все данные, публикуем
+    if (draft.photo) {
+      await finishWizard(chatId, draft, draft.photo);
+      return;
+    }
+    await say(chatId, renderDraft(draft, `Шаг ${total} из ${total} — пришли фото картины ответом на это сообщение`), {
       reply_markup: { force_reply: true, input_field_placeholder: 'Прикрепи фото' }
     });
     return;
   }
 
   const number = STEPS.indexOf(step) + 1;
-  const hint = `Шаг ${number} из 6 — ${step.ask}`;
+  const hint = `Шаг ${number} из ${total} — ${step.ask}`;
 
   if (step.key === 'Художник') {
     const catalog = await readCatalog();
     const names = artistNames(catalog);
 
-    await sayPlain(chatId, renderDraft(draft, hint + '\n(или пришли имя нового художника ответом на это сообщение)'), {
+    await say(chatId, renderDraft(draft, hint + '\n(или пришли имя нового художника ответом на это сообщение)'), {
       reply_markup: {
         inline_keyboard: names.map((name, index) => [{ text: name, callback_data: `artist:${index}` }])
       }
@@ -448,7 +474,7 @@ async function askNextStep(chatId, draft) {
     return;
   }
 
-  await sayPlain(chatId, renderDraft(draft, hint), {
+  await say(chatId, renderDraft(draft, hint), {
     reply_markup: { force_reply: true, input_field_placeholder: step.placeholder || 'Напиши ответ' }
   });
 }
@@ -749,13 +775,21 @@ async function handleMessage(message, adminId) {
   // Ответ на сообщение-черновик — очередной шаг мастера.
   const repliedText = message.reply_to_message?.text;
   if (isDraftMessage(repliedText)) {
-    await handleWizardReply(chatId, parseDraft(repliedText), message, text);
+    const draft = parseDraft(repliedText);
+    const savedPhoto = photoFromDraftMessage(message.reply_to_message);
+    if (savedPhoto) draft.photo = savedPhoto;
+    await handleWizardReply(chatId, draft, message, text);
     return;
   }
 
   const photoId = extractPhotoId(message);
   if (photoId) {
-    await quickAdd(chatId, message);
+    const lines = String(message.caption || '').split('\n').map(s => s.trim()).filter(Boolean);
+    if (lines.length >= 5) {
+      await quickAdd(chatId, message);          // всё описано в подписи — добавляем сразу
+    } else {
+      await askNextStep(chatId, { photo: photoId });   // фото без данных — спрашиваем по шагам
+    }
     return;
   }
 
@@ -781,7 +815,8 @@ async function handleMessage(message, adminId) {
       await cmdDeleteAsk(chatId, args[0]);
       break;
     default:
-      if (command.startsWith('/')) await cmdHelp(chatId);
+      // Любое другое сообщение от хозяйки — показываем, что бот жив, и что он умеет
+      await cmdHelp(chatId);
   }
 }
 
@@ -790,15 +825,20 @@ async function handleWizardReply(chatId, draft, message, text) {
   const step = currentStep(draft);
 
   if (photoId) {
+    draft.photo = photoId;
     if (step) {
-      await say(chatId, `❌ Сначала заполни «${step.key}» — ответь текстом на последнее сообщение.`);
-      return;
+      await askNextStep(chatId, draft);      // фото пришло раньше времени — запомнили, идём дальше
+    } else {
+      await finishWizard(chatId, draft, photoId);
     }
-    await finishWizard(chatId, draft, photoId);
     return;
   }
 
   if (!step) {
+    if (draft.photo) {
+      await finishWizard(chatId, draft, draft.photo);
+      return;
+    }
     await say(chatId, 'Осталось только фото — пришли его ответом на сообщение с карточкой.');
     return;
   }
@@ -851,6 +891,8 @@ async function handleCallback(callback, adminId) {
 
   if (data.startsWith('artist:')) {
     const draft = parseDraft(callback.message.text || '');
+    const savedPhoto = photoFromDraftMessage(callback.message);
+    if (savedPhoto) draft.photo = savedPhoto;
     const catalog = await readCatalog();
     const name = artistNames(catalog)[Number(data.split(':')[1])];
     if (!name) return;
