@@ -84,8 +84,12 @@ git push
 vercel --prod --yes
 ```
 
-Vercel project ID: `prj_1CLR2ZkRJWzjdCB2ZCf3pH8ckcVl`
-Токен — в `.env` файле (не в git).
+Vercel project ID: `prj_1CLR2ZkRJWzjdCB2ZCf3pH8ckcVl`, team ID: `team_Qpaq5aOAkQX4rL8jxamnwjSk`
+
+Доступы (файла `.env` в проекте больше нет, потерян при объединении папок 04.07):
+VERCEL_TOKEN — в `jarvis/bot/.env`, GITHUB_TOKEN — в `~/.git-credentials`.
+BOT_TOKEN хранится только в переменных Vercel с типом sensitive — через API не читается,
+при необходимости брать у @BotFather.
 
 ---
 
