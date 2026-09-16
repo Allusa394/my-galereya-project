@@ -1,0 +1,10 @@
+# Служебное — не публикуем на сайте
+chat-history/
+logs/
+graphify-out/
+sheets-import/
+tests/
+docs/
+.claude/
+CLAUDE.md
+*.log
