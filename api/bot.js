@@ -701,6 +701,8 @@ module.exports = async function handler(req, res) {
   const adminId = process.env.ADMIN_CHAT_ID;
   const channelId = process.env.ADMIN_CHANNEL_ID;
 
+  console.log('incoming:', Object.keys(update).filter(k => k !== 'update_id').join(',') || 'пусто');
+
   try {
     if (update.callback_query) {
       await handleCallback(update.callback_query, adminId);
@@ -728,6 +730,14 @@ async function handleMessage(message, adminId) {
   const chatId = message.chat.id;
   const text = (message.text || '').trim();
   const isAdmin = adminId && String(message.from?.id) === String(adminId);
+
+  // Видно в журнале Vercel: от кого пришло и признал ли бот хозяйку.
+  console.log('update:', {
+    from: message.from?.id,
+    admin: isAdmin,
+    kind: message.photo ? 'photo' : (message.document ? 'document' : 'text'),
+    reply: Boolean(message.reply_to_message)
+  });
 
   if (text.startsWith('/start')) {
     await cmdStart(message);
