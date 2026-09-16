@@ -34,6 +34,12 @@ function say(chatId, text, extra = {}) {
   return tg('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML', ...extra });
 }
 
+// Черновик карточки шлём без разметки: в названии картины может быть
+// любой символ, а бот потом читает этот же текст обратно как память о диалоге.
+function sayPlain(chatId, text, extra = {}) {
+  return tg('sendMessage', { chat_id: chatId, text, ...extra });
+}
+
 // ---------- GitHub ----------
 
 function ghHeaders() {
@@ -105,6 +111,14 @@ async function commitCatalog(catalog, message, image) {
 
 function formatPrice(value) {
   return Number(value).toLocaleString('ru-RU') + ' ₽';
+}
+
+// Названия картин пишет человек — символы < > & сломали бы разметку сообщения.
+function esc(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 function nextPaintingId(paintings) {
@@ -285,7 +299,7 @@ async function askNextStep(chatId, draft) {
   const step = currentStep(draft);
 
   if (!step) {
-    await say(chatId, renderDraft(draft, 'Шаг 6 из 6 — пришли фото картины ответом на это сообщение'), {
+    await sayPlain(chatId, renderDraft(draft, 'Шаг 6 из 6 — пришли фото картины ответом на это сообщение'), {
       reply_markup: { force_reply: true, input_field_placeholder: 'Прикрепи фото' }
     });
     return;
@@ -298,7 +312,7 @@ async function askNextStep(chatId, draft) {
     const catalog = await readCatalog();
     const names = artistNames(catalog);
 
-    await say(chatId, renderDraft(draft, hint + '\n(или пришли имя нового художника ответом на это сообщение)'), {
+    await sayPlain(chatId, renderDraft(draft, hint + '\n(или пришли имя нового художника ответом на это сообщение)'), {
       reply_markup: {
         inline_keyboard: names.map((name, index) => [{ text: name, callback_data: `artist:${index}` }])
       }
@@ -306,7 +320,7 @@ async function askNextStep(chatId, draft) {
     return;
   }
 
-  await say(chatId, renderDraft(draft, hint), {
+  await sayPlain(chatId, renderDraft(draft, hint), {
     reply_markup: { force_reply: true, input_field_placeholder: step.placeholder || 'Напиши ответ' }
   });
 }
@@ -339,18 +353,18 @@ async function finishWizard(chatId, draft, fileId) {
   }
 
   if (result.duplicate) {
-    await say(chatId, `⚠️ Картина «${result.duplicate.title}» уже есть в каталоге (<code>${result.duplicate.id}</code>). Ничего не менял.`);
+    await say(chatId, `⚠️ Картина «${esc(result.duplicate.title)}» уже есть в каталоге (<code>${result.duplicate.id}</code>). Ничего не менял.`);
     return;
   }
 
   await say(chatId,
-    `✅ Готово! Картина <b>${draft['Название']}</b> добавлена под номером <code>${result.id}</code>.\n\n` +
-    `Художник: ${result.label}\n` +
+    `✅ Готово! Картина <b>${esc(draft['Название'])}</b> добавлена под номером <code>${result.id}</code>.\n\n` +
+    `Художник: ${esc(result.label)}\n` +
     `Размер: ${size.width}×${size.height} см\n` +
     `Цена: ${formatPrice(price)}\n\n` +
     `В приложении появится через 1–2 минуты.` +
     (result.isNewArtist
-      ? `\n\n⚠️ Художник «${result.label}» новый — в разделе «Художники» его карточки пока нет, фото и биографию нужно добавить отдельно.`
+      ? `\n\n⚠️ Художник «${esc(result.label)}» новый — в разделе «Художники» его карточки пока нет, фото и биографию нужно добавить отдельно.`
       : ''));
 }
 
@@ -402,7 +416,7 @@ async function cmdList(chatId) {
   }
 
   const lines = catalog.paintings.map(p =>
-    `<code>${p.id}</code> ${p.sold ? '🔴' : '🟢'} ${p.title} — ${formatPrice(p.price)}`);
+    `<code>${p.id}</code> ${p.sold ? '🔴' : '🟢'} ${esc(p.title)} — ${formatPrice(p.price)}`);
 
   const sold = catalog.paintings.filter(p => p.sold).length;
   await say(chatId,
@@ -423,7 +437,7 @@ async function cmdSold(chatId, id, sold) {
   const painting = findPainting(catalog, id);
 
   if (!painting) {
-    await say(chatId, `❌ Картины <code>${id}</code> нет. Посмотри номера: /list`);
+    await say(chatId, `❌ Картины <code>${esc(id)}</code> нет. Посмотри номера: /list`);
     return;
   }
 
@@ -434,7 +448,7 @@ async function cmdSold(chatId, id, sold) {
   }
 
   await commitCatalog(catalog, `update: «${painting.title}» — ${sold ? 'продана' : 'снова в продаже'} (из Telegram)`);
-  await say(chatId, `${sold ? '🔴' : '🟢'} «${painting.title}» — ${sold ? 'помечена проданной' : 'вернулась в продажу'}. Обновится через 1–2 минуты.`);
+  await say(chatId, `${sold ? '🔴' : '🟢'} «${esc(painting.title)}» — ${sold ? 'помечена проданной' : 'вернулась в продажу'}. Обновится через 1–2 минуты.`);
 }
 
 async function cmdPrice(chatId, id, priceRaw) {
@@ -445,14 +459,14 @@ async function cmdPrice(chatId, id, priceRaw) {
 
   const price = parsePrice(priceRaw);
   if (!price) {
-    await say(chatId, `❌ Не понял цену «${priceRaw}». Нужно так: <code>/price p03 30000</code>`);
+    await say(chatId, `❌ Не понял цену «${esc(priceRaw)}». Нужно так: <code>/price p03 30000</code>`);
     return;
   }
 
   const catalog = await readCatalog();
   const painting = findPainting(catalog, id);
   if (!painting) {
-    await say(chatId, `❌ Картины <code>${id}</code> нет. Посмотри номера: /list`);
+    await say(chatId, `❌ Картины <code>${esc(id)}</code> нет. Посмотри номера: /list`);
     return;
   }
 
@@ -460,7 +474,7 @@ async function cmdPrice(chatId, id, priceRaw) {
   painting.price = price;
 
   await commitCatalog(catalog, `update: цена «${painting.title}» — ${price} (из Telegram)`);
-  await say(chatId, `💰 «${painting.title}»: ${formatPrice(was)} → <b>${formatPrice(price)}</b>. Обновится через 1–2 минуты.`);
+  await say(chatId, `💰 «${esc(painting.title)}»: ${formatPrice(was)} → <b>${formatPrice(price)}</b>. Обновится через 1–2 минуты.`);
 }
 
 async function cmdDeleteAsk(chatId, id) {
@@ -473,12 +487,12 @@ async function cmdDeleteAsk(chatId, id) {
   const painting = findPainting(catalog, id);
 
   if (!painting) {
-    await say(chatId, `❌ Картины <code>${id}</code> нет. Посмотри номера: /list`);
+    await say(chatId, `❌ Картины <code>${esc(id)}</code> нет. Посмотри номера: /list`);
     return;
   }
 
   await say(chatId,
-    `Удалить «<b>${painting.title}</b>» (${formatPrice(painting.price)}) из галереи?\n\nЭто действие не отменить.`,
+    `Удалить «<b>${esc(painting.title)}</b>» (${formatPrice(painting.price)}) из галереи?\n\nЭто действие не отменить.`,
     {
       reply_markup: {
         inline_keyboard: [[
@@ -494,13 +508,13 @@ async function cmdDeleteConfirm(chatId, id) {
   const painting = findPainting(catalog, id);
 
   if (!painting) {
-    await say(chatId, `❌ Картины <code>${id}</code> уже нет.`);
+    await say(chatId, `❌ Картины <code>${esc(id)}</code> уже нет.`);
     return;
   }
 
   catalog.paintings = catalog.paintings.filter(p => p.id !== painting.id);
   await commitCatalog(catalog, `update: удалена картина «${painting.title}» (из Telegram)`);
-  await say(chatId, `🗑 «${painting.title}» удалена из галереи. Обновится через 1–2 минуты.`);
+  await say(chatId, `🗑 «${esc(painting.title)}» удалена из галереи. Обновится через 1–2 минуты.`);
 }
 
 // ---------- Быстрый режим: фото с подписью из пяти строк ----------
@@ -522,11 +536,11 @@ async function quickAdd(chatId, message) {
   const price = parsePrice(priceRaw);
 
   if (!size) {
-    await say(chatId, `❌ Не понял размер «${sizeRaw}». Нужно так: <code>60x80</code>`);
+    await say(chatId, `❌ Не понял размер «${esc(sizeRaw)}». Нужно так: <code>60x80</code>`);
     return;
   }
   if (!price) {
-    await say(chatId, `❌ Не понял цену «${priceRaw}». Нужно число: <code>35000</code>`);
+    await say(chatId, `❌ Не понял цену «${esc(priceRaw)}». Нужно число: <code>35000</code>`);
     return;
   }
 
@@ -537,15 +551,15 @@ async function quickAdd(chatId, message) {
   });
 
   if (result.duplicate) {
-    await say(chatId, `⚠️ «${result.duplicate.title}» уже есть в каталоге (<code>${result.duplicate.id}</code>). Ничего не менял.`);
+    await say(chatId, `⚠️ «${esc(result.duplicate.title)}» уже есть в каталоге (<code>${result.duplicate.id}</code>). Ничего не менял.`);
     return;
   }
 
   await say(chatId,
-    `✅ Добавлена картина <b>${title}</b> — номер <code>${result.id}</code>.\n` +
-    `${result.label}, ${size.width}×${size.height} см, ${formatPrice(price)}\n\n` +
+    `✅ Добавлена картина <b>${esc(title)}</b> — номер <code>${result.id}</code>.\n` +
+    `${esc(result.label)}, ${size.width}×${size.height} см, ${formatPrice(price)}\n\n` +
     `В приложении появится через 1–2 минуты.` +
-    (result.isNewArtist ? `\n\n⚠️ Художник «${result.label}» новый — карточки в разделе «Художники» у него пока нет.` : ''));
+    (result.isNewArtist ? `\n\n⚠️ Художник «${esc(result.label)}» новый — карточки в разделе «Художники» у него пока нет.` : ''));
 }
 
 // ---------- Точка входа ----------
@@ -657,11 +671,11 @@ async function handleWizardReply(chatId, draft, message, text) {
   }
 
   if (step.key === 'Размер' && !parseSize(text)) {
-    await say(chatId, `❌ Не понял размер «${text}». Нужно так: <code>60x80</code> (ширина на высоту)`);
+    await say(chatId, `❌ Не понял размер «${esc(text)}». Нужно так: <code>60x80</code> (ширина на высоту)`);
     return;
   }
   if (step.key === 'Цена' && !parsePrice(text)) {
-    await say(chatId, `❌ Не понял цену «${text}». Нужно число: <code>35000</code>`);
+    await say(chatId, `❌ Не понял цену «${esc(text)}». Нужно число: <code>35000</code>`);
     return;
   }
 
