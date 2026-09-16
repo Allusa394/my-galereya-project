@@ -133,6 +133,13 @@ function msg(text, from = ADMIN, extra = {}) {
 function photoMsg(extra = {}, from = ADMIN) {
   return { message: { chat: { id: from }, from: { id: from }, photo: [{ file_id: 'small' }, { file_id: 'big' }], ...extra } };
 }
+// Следующий свободный номер в каталоге — тест не должен зависеть от того,
+// сколько картин Алла уже добавила через бота.
+function nextId() {
+  const nums = catalog.paintings.map(p => Number(String(p.id).replace(/\D/g, '')) || 0);
+  return 'p' + String(Math.max(0, ...nums) + 1).padStart(2, '0');
+}
+
 // В русском формате цены разделитель — неразрывный пробел, приводим к обычному.
 function lastText() {
   return outbox.filter(o => o.method === 'sendMessage').map(o => o.text).join('\n---\n')
@@ -210,23 +217,26 @@ function check(name, condition, details = '') {
   check('текст вместо фото — понятная подсказка', lastText().includes('Осталось только фото'));
 
   const before = catalog.paintings.length;
+  const expectedId = nextId();          // какой номер должен получиться
   out = await send(photoMsg({ reply_to_message: { text: draft } }));
   const added = catalog.paintings[catalog.paintings.length - 1];
   check('картина добавлена в каталог', catalog.paintings.length === before + 1);
-  check('номер p13', added.id === 'p13', JSON.stringify(added));
+  check('номер следует за последним в каталоге', added.id === expectedId, JSON.stringify(added));
   check('поля заполнены верно',
     added.title === 'Тестовая картина' && added.artist === 'volkova' &&
     added.artistLabel === 'Елена Волкова' && added.width === 60 && added.height === 80 &&
-    added.price === 35000 && added.technique === 'Холст, масло' && added.imageUrl === 'images/p13.jpg',
+    added.price === 35000 && added.technique === 'Холст, масло' && added.imageUrl === `images/${expectedId}.jpg`,
     JSON.stringify(added));
   check('фото и каталог ушли одним коммитом',
-    commits[commits.length - 1].image === 'images/p13.jpg');
-  check('бот отчитался номером', lastText().includes('p13') && lastText().includes('✅'));
+    commits[commits.length - 1].image === `images/${expectedId}.jpg`);
+  check('бот отчитался номером', lastText().includes(expectedId) && lastText().includes('✅'));
 
   console.log('\n=== 5. Быстрый режим: фото с подписью ===');
+  const expectedQuickId = nextId();
   out = await send(photoMsg({ caption: 'Вторая тестовая\nОписание второй.\nСоколов\n40x30\n28000' }));
   const quick = catalog.paintings[catalog.paintings.length - 1];
-  check('добавлена p14', quick.id === 'p14' && quick.title === 'Вторая тестовая');
+  check('добавлена следующим номером', quick.id === expectedQuickId && quick.title === 'Вторая тестовая',
+    quick.id + ' вместо ' + expectedQuickId);
   check('художник найден по фамилии', quick.artist === 'sokolov' && quick.artistLabel === 'Андрей Соколов');
   check('цена и размер разобраны', quick.price === 28000 && quick.width === 40 && quick.height === 30);
 
@@ -244,13 +254,13 @@ function check(name, condition, details = '') {
   check('кривой размер в подписи отклонён', lastText().includes('Не понял размер'));
 
   console.log('\n=== 7. Правки: продано, цена, удаление ===');
-  out = await send(msg('/sold p13'));
-  check('p13 помечена проданной', catalog.paintings.find(p => p.id === 'p13').sold === true);
-  out = await send(msg('/unsold p13'));
-  check('p13 вернулась в продажу', catalog.paintings.find(p => p.id === 'p13').sold === undefined);
+  out = await send(msg(`/sold ${expectedId}`));
+  check('p13 помечена проданной', catalog.paintings.find(p => p.id === expectedId).sold === true);
+  out = await send(msg(`/unsold ${expectedId}`));
+  check('p13 вернулась в продажу', catalog.paintings.find(p => p.id === expectedId).sold === undefined);
 
-  out = await send(msg('/price p13 41000'));
-  check('цена изменена', catalog.paintings.find(p => p.id === 'p13').price === 41000);
+  out = await send(msg(`/price ${expectedId} 41000`));
+  check('цена изменена', catalog.paintings.find(p => p.id === expectedId).price === 41000);
   check('бот показал старую и новую цену', lastText().includes('35 000') && lastText().includes('41 000'));
 
   out = await send(msg('/sold p99'));
@@ -260,17 +270,17 @@ function check(name, condition, details = '') {
   out = await send(msg('/sold'));
   check('/sold без номера — подсказка', lastText().includes('Нужен номер'));
 
-  out = await send(msg('/del p13'));
+  out = await send(msg(`/del ${expectedId}`));
   check('удаление спрашивает подтверждение',
-    lastText().includes('Удалить') && JSON.stringify(out).includes('del:p13'));
-  check('без подтверждения картина на месте', catalog.paintings.some(p => p.id === 'p13'));
+    lastText().includes('Удалить') && JSON.stringify(out).includes(`del:${expectedId}`));
+  check('без подтверждения картина на месте', catalog.paintings.some(p => p.id === expectedId));
 
   out = await send({ callback_query: { id: 'c3', from: { id: ADMIN }, data: 'cancel', message: { chat: { id: ADMIN }, message_id: 9, text: 'Удалить' } } });
-  check('отмена ничего не удаляет', catalog.paintings.some(p => p.id === 'p13'));
+  check('отмена ничего не удаляет', catalog.paintings.some(p => p.id === expectedId));
 
-  out = await send({ callback_query: { id: 'c4', from: { id: ADMIN }, data: 'del:p13', message: { chat: { id: ADMIN }, message_id: 9, text: 'Удалить' } } });
-  check('после подтверждения картина удалена', !catalog.paintings.some(p => p.id === 'p13'));
-  out = await send({ callback_query: { id: 'c5', from: { id: ADMIN }, data: 'del:p13', message: { chat: { id: ADMIN }, message_id: 9, text: 'Удалить' } } });
+  out = await send({ callback_query: { id: 'c4', from: { id: ADMIN }, data: `del:${expectedId}`, message: { chat: { id: ADMIN }, message_id: 9, text: 'Удалить' } } });
+  check('после подтверждения картина удалена', !catalog.paintings.some(p => p.id === expectedId));
+  out = await send({ callback_query: { id: 'c5', from: { id: ADMIN }, data: `del:${expectedId}`, message: { chat: { id: ADMIN }, message_id: 9, text: 'Удалить' } } });
   check('повторное удаление не ломает бота', lastText().includes('уже нет'));
 
   console.log('\n=== 8. Служебный канал ===');
@@ -359,7 +369,7 @@ function check(name, condition, details = '') {
   check('бот сообщил, что появится в приложении', lastText().includes('появится через'));
 
   deploys = [];
-  out = await send(msg('/price p14 31000'));
+  out = await send(msg(`/price ${expectedQuickId} 31000`));
   check('правка цены тоже публикует сайт', deploys.length === 1);
 
   console.log('\n=== 12. Публикация сломалась ===');
