@@ -210,6 +210,19 @@
       "year": 2025,
       "price": 45000,
       "imageUrl": "images/p12.jpg"
+    },
+    {
+      "id": "p13",
+      "title": "необычные цветы",
+      "description": "Цветы которые художник видит в своем внутреннем мире",
+      "artist": "sokolov",
+      "artistLabel": "Андрей Соколов",
+      "technique": "Холст, масло",
+      "width": 40,
+      "height": 60,
+      "year": 2026,
+      "price": 45000,
+      "imageUrl": "images/p13.jpg"
     }
   ]
 }
