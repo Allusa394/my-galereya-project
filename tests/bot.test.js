@@ -348,6 +348,103 @@ function check(name, condition, details = '') {
     JSON.stringify(flowAdded));
   check('второй раз фото не просили', !lastText().includes('пришли фото'));
 
+  console.log('\n=== 10в. Правка картины: название, описание, фото, автор ===');
+  const target = catalog.paintings[catalog.paintings.length - 1].id;
+  const askTask = sent => {
+    const last = sent.filter(o => o.method === 'sendMessage').pop();
+    const m = (last.text || '').match(/t\.me\/\?e=([^"]+)/);
+    return { url: m ? 'https://t.me/?e=' + m[1] : null, text: last.text };
+  };
+  const taskReply = (url, extra = {}) => ({ text: 'вопрос бота', entities: [{ type: 'text_link', url }], ...extra });
+
+  out = await send(msg(`/title ${target} Новое имя картины`));
+  check('название меняется одной командой',
+    catalog.paintings.find(p => p.id === target).title === 'Новое имя картины');
+  check('бот показал было/стало', lastText().includes('Было') && lastText().includes('Стало'));
+
+  out = await send(msg(`/desc ${target}`));
+  let t = askTask(out);
+  check('без текста бот спрашивает описание', Boolean(t.url) && t.text.includes('Новое описание'));
+  out = await send(msg('Совершенно новое описание.', ADMIN, { reply_to_message: taskReply(t.url) }));
+  check('описание записалось из ответа',
+    catalog.paintings.find(p => p.id === target).description === 'Совершенно новое описание.');
+
+  out = await send(msg(`/photo ${target}`));
+  t = askTask(out);
+  check('бот просит фото', t.text.includes('новое фото'));
+  out = await send(msg('какой-то текст', ADMIN, { reply_to_message: taskReply(t.url) }));
+  check('текст вместо фото отклонён', lastText().includes('Жду именно фото'));
+  out = await send(photoMsg({ reply_to_message: taskReply(t.url) }));
+  const repic = catalog.paintings.find(p => p.id === target);
+  check('фото заменено и помечено версией',
+    repic.imageUrl.startsWith(`images/${target}.jpg?v=`), repic.imageUrl);
+  check('файл ушёл по прежнему пути (без версии)',
+    commits[commits.length - 1].image === `images/${target}.jpg`);
+
+  out = await send(msg(`/artist ${target} Волкова`));
+  check('автор картины сменился',
+    catalog.paintings.find(p => p.id === target).artistLabel === 'Елена Волкова');
+  out = await send(msg(`/artist ${target} Неизвестный`));
+  check('несуществующий художник отклонён', lastText().includes('в галерее нет'));
+  check('и бот подсказал, кто есть', lastText().includes('Андрей Соколов'));
+
+  console.log('\n=== 10г. Художники: список, добавление, правка, удаление ===');
+  out = await send(msg('/artists'));
+  check('список художников с числом картин', lastText().includes('Андрей Соколов') && lastText().includes('картин:'));
+
+  const artistsBefore = catalog.artists.length;
+  out = await send(msg('/artist_add Мария Тестова'));
+  t = askTask(out);
+  check('после имени бот просит описание', t.text.includes('Пришли описание'));
+  out = await send(msg('Пишет натюрморты и цветы.', ADMIN, { reply_to_message: taskReply(t.url) }));
+  const added2 = catalog.artists[catalog.artists.length - 1];
+  check('художник добавлен', catalog.artists.length === artistsBefore + 1 && added2.name === 'Мария Тестова');
+  check('описание сохранено', added2.bio === 'Пишет натюрморты и цветы.');
+  check('сразу предложено прислать фото', lastText().includes('фото художника'));
+
+  t = askTask(out);
+  out = await send(msg('пропустить', ADMIN, { reply_to_message: taskReply(t.url) }));
+  check('фото можно пропустить', lastText().includes('пропустили'));
+
+  out = await send(msg('/artist_add Мария Тестова'));
+  t = askTask(out);
+  out = await send(msg('Дубликат.', ADMIN, { reply_to_message: taskReply(t.url) }));
+  check('повторный художник не добавляется', catalog.artists.length === artistsBefore + 1);
+  check('бот предупредил о дубле', lastText().includes('уже есть'));
+
+  out = await send(msg('/artist_bio Тестова Новое описание художницы.'));
+  check('описание художника меняется',
+    catalog.artists.find(a => a.name === 'Мария Тестова').bio === 'Новое описание художницы.');
+
+  out = await send(msg('/artist_photo Тестова'));
+  t = askTask(out);
+  out = await send(photoMsg({ reply_to_message: taskReply(t.url) }));
+  const withPhoto = catalog.artists.find(a => a.name === 'Мария Тестова');
+  check('фото художника сохранено в отдельную папку',
+    withPhoto.photoUrl.startsWith('images/artists/testova.jpg?v='), withPhoto.photoUrl);
+
+  out = await send(msg('/artist_bio Неизвестная текст'));
+  check('правка несуществующего художника — понятная ошибка', lastText().includes('нет'));
+
+  out = await send(msg('/artist_del Соколов'));
+  check('художника с картинами удалить нельзя', lastText().includes('удалять нельзя'));
+  check('бот перечислил его картины', lastText().includes('p01'));
+  check('и подсказал, что делать', lastText().includes('/artist') || lastText().includes('/del'));
+
+  out = await send(msg('/artist_del Тестова'));
+  check('художника без картин бот предлагает удалить', JSON.stringify(out).includes('artdel:testova'));
+  check('до подтверждения он на месте', catalog.artists.some(a => a.name === 'Мария Тестова'));
+  out = await send({ callback_query: { id: 'c20', from: { id: ADMIN }, data: 'artdel:testova',
+    message: { chat: { id: ADMIN }, message_id: 60, text: 'Удалить' } } });
+  check('после подтверждения удалён', !catalog.artists.some(a => a.name === 'Мария Тестова'));
+
+  console.log('\n=== 10д. Новый художник у картины ===');
+  out = await send(photoMsg({ caption: 'Картина от новичка\nОписание.\nПётр Новиков\n30x40\n12000' }));
+  check('бот предложил завести карточку', JSON.stringify(out).includes('newartist:'));
+  out = await send({ callback_query: { id: 'c21', from: { id: ADMIN }, data: 'newartist:Пётр Новиков',
+    message: { chat: { id: ADMIN }, message_id: 61, text: 'предложение' } } });
+  check('по кнопке бот спрашивает описание', lastText().includes('Пришли описание'));
+
   console.log('\n=== 11. Публикация сайта ===');
   deploys = []; uploads = [];
   out = await send(photoMsg({ caption: 'Публикуемая\nОписание.\nОрлов\n20x30\n9000' }));

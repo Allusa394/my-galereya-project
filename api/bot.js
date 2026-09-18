@@ -516,10 +516,23 @@ async function finishWizard(chatId, draft, fileId) {
     `Художник: ${esc(result.label)}\n` +
     `Размер: ${size.width}×${size.height} см\n` +
     `Цена: ${formatPrice(price)}` +
-    publishNote(result.publish) +
-    (result.isNewArtist
-      ? `\n\n⚠️ Художник «${esc(result.label)}» новый — в разделе «Художники» его карточки пока нет, фото и биографию нужно добавить отдельно.`
-      : ''));
+    publishNote(result.publish));
+
+  if (result.isNewArtist) await offerArtistCard(chatId, result.label);
+}
+
+// У нового художника нет карточки в разделе «Художники» — предлагаем завести сразу.
+function offerArtistCard(chatId, name) {
+  return say(chatId,
+    `⚠️ Художника «<b>${esc(name)}</b>» ещё нет в разделе «Художники» — у картины будет автор, но без фото и рассказа о нём.`,
+    {
+      reply_markup: {
+        inline_keyboard: [[
+          { text: '👤 Завести карточку', callback_data: `newartist:${name}`.slice(0, 64) },
+          { text: 'Потом', callback_data: 'cancel' }
+        ]]
+      }
+    });
 }
 
 // ---------- Команды ----------
@@ -552,14 +565,24 @@ async function cmdStart(message) {
 async function cmdHelp(chatId) {
   await say(chatId,
     '<b>Управление галереей</b>\n\n' +
+    '<b>Картины</b>\n' +
     '/add — добавить картину (бот спросит по шагам)\n' +
     '/list — список картин с номерами\n' +
+    '/price p03 30000 — изменить цену\n' +
+    '/title p03 — изменить название\n' +
+    '/desc p03 — изменить описание\n' +
+    '/photo p03 — заменить фото\n' +
+    '/artist p03 Волкова — сменить автора\n' +
     '/sold p03 — пометить проданной\n' +
     '/unsold p03 — вернуть в продажу\n' +
-    '/price p03 30000 — изменить цену\n' +
     '/del p03 — удалить картину\n\n' +
-    'Быстрый способ: пришли фото картины с подписью из пяти строк —\n' +
-    '<code>Название\nОписание\nХудожник\n60x80\n35000</code>');
+    '<b>Художники</b>\n' +
+    '/artists — список художников\n' +
+    '/artist_add — добавить художника\n' +
+    '/artist_bio Волкова — изменить описание\n' +
+    '/artist_photo Волкова — заменить фото\n' +
+    '/artist_del Волкова — удалить\n\n' +
+    'Самое простое: пришли фото картины — бот сам спросит остальное.');
 }
 
 async function cmdList(chatId) {
@@ -671,6 +694,266 @@ async function cmdDeleteConfirm(chatId, id) {
   await say(chatId, `🗑 «${esc(painting.title)}» удалена из галереи.` + publishNote(result));
 }
 
+// ---------- Правка по одному полю ----------
+//
+// Бот задаёт вопрос и прячет в нём метку «что именно правим» — невидимой
+// ссылкой. Ответ приходит с этой меткой, и бот знает, куда записать текст
+// или фото. Снова без базы данных.
+
+function taskLink(task) {
+  return `<a href="https://t.me/?e=${encodeURIComponent(task)}">​</a>`;
+}
+
+function taskFromMessage(message) {
+  const link = (message?.entities || []).find(e => e.type === 'text_link' && e.url.includes('t.me/?e='));
+  if (!link) return null;
+  try {
+    return decodeURIComponent(link.url.split('e=')[1]);
+  } catch {
+    return null;
+  }
+}
+
+function askFor(chatId, task, question, placeholder) {
+  return say(chatId, `${esc(question)}${taskLink(task)}`, {
+    reply_markup: { force_reply: true, input_field_placeholder: placeholder || 'Напиши ответ' }
+  });
+}
+
+// ---------- Правка картины ----------
+
+async function editPaintingText(chatId, id, field, value) {
+  const catalog = await readCatalog();
+  const painting = findPainting(catalog, id);
+  if (!painting) {
+    await say(chatId, `❌ Картины <code>${esc(id)}</code> нет. Посмотри номера: /list`);
+    return;
+  }
+
+  const was = painting[field];
+  painting[field] = value.trim();
+
+  const label = field === 'title' ? 'Название' : 'Описание';
+  const result = await saveAndPublish(catalog, `update: ${label.toLowerCase()} «${painting.title}» (из Telegram)`);
+  await say(chatId, `✏️ ${label} обновлено.\n\nБыло: ${esc(was)}\nСтало: <b>${esc(painting[field])}</b>` + publishNote(result));
+}
+
+async function editPaintingPhoto(chatId, id, fileId) {
+  const catalog = await readCatalog();
+  const painting = findPainting(catalog, id);
+  if (!painting) {
+    await say(chatId, `❌ Картины <code>${esc(id)}</code> нет. Посмотри номера: /list`);
+    return;
+  }
+
+  const photo = await downloadTelegramFile(fileId);
+  const imagePath = `images/${painting.id}.${photo.ext}`;
+  // Метка времени в ссылке — иначе телефон покажет старую картинку из кэша
+  painting.imageUrl = `${imagePath}?v=${Date.now()}`;
+
+  const result = await saveAndPublish(catalog, `update: новое фото «${painting.title}» (из Telegram)`, {
+    path: imagePath,
+    base64: photo.base64
+  });
+  await say(chatId, `🖼 Фото картины «<b>${esc(painting.title)}</b>» заменено.` + publishNote(result));
+}
+
+async function editPaintingArtist(chatId, id, artistInput) {
+  const catalog = await readCatalog();
+  const painting = findPainting(catalog, id);
+  if (!painting) {
+    await say(chatId, `❌ Картины <code>${esc(id)}</code> нет. Посмотри номера: /list`);
+    return;
+  }
+
+  const known = matchArtist(catalog, artistInput);
+  if (!known) {
+    await say(chatId,
+      `❌ Художника «${esc(artistInput)}» в галерее нет.\n\nЕсть: ${artistNames(catalog).map(esc).join(', ')}\n` +
+      `Завести нового: /artist_add`);
+    return;
+  }
+
+  const was = painting.artistLabel;
+  painting.artist = known.slug;
+  painting.artistLabel = known.label;
+
+  const result = await saveAndPublish(catalog, `update: автор «${painting.title}» — ${known.label} (из Telegram)`);
+  await say(chatId, `👤 «<b>${esc(painting.title)}</b>»: ${esc(was)} → <b>${esc(known.label)}</b>` + publishNote(result));
+}
+
+// ---------- Художники ----------
+
+async function cmdArtists(chatId) {
+  const catalog = await readCatalog();
+  const artists = catalog.artists || [];
+
+  if (!artists.length) {
+    await say(chatId, 'Художников пока нет. Завести: /artist_add');
+    return;
+  }
+
+  const lines = artists.map(a => {
+    const count = catalog.paintings.filter(p => p.artistLabel === a.name).length;
+    const marks = [a.photoUrl ? '📷' : '⚪️ без фото', a.bio ? '📝' : '⚪️ без описания'].join(' ');
+    return `<b>${esc(a.name)}</b> — картин: ${count}\n   ${marks}`;
+  });
+
+  await say(chatId,
+    `<b>Художники (${artists.length})</b>\n\n` + lines.join('\n\n') +
+    '\n\nЧто можно: /artist_add, /artist_bio Фамилия, /artist_photo Фамилия, /artist_del Фамилия');
+}
+
+async function addArtist(chatId, name, bio) {
+  const catalog = await readCatalog();
+  catalog.artists = catalog.artists || [];
+
+  if (matchArtist(catalog, name)) {
+    await say(chatId, `⚠️ «${esc(name)}» уже есть в галерее. Посмотреть: /artists`);
+    return;
+  }
+
+  catalog.artists.push({ name: name.trim(), photoUrl: '', bio: bio.trim() });
+  const result = await saveAndPublish(catalog, `update: добавлен художник ${name.trim()} (из Telegram)`);
+
+  await say(chatId, `✅ Художник <b>${esc(name)}</b> добавлен.` + publishNote(result));
+  await askFor(chatId, `artistphoto:${slugifyArtist(name)}`,
+    'Пришли фото художника ответом на это сообщение (или напиши «пропустить»)', 'Прикрепи фото');
+}
+
+function findArtist(catalog, input) {
+  const known = matchArtist(catalog, input);
+  if (!known) return null;
+  return (catalog.artists || []).find(a => a.name === known.label) || null;
+}
+
+async function editArtistBio(chatId, input, bio) {
+  const catalog = await readCatalog();
+  const artist = findArtist(catalog, input);
+  if (!artist) {
+    await say(chatId, `❌ Художника «${esc(input)}» нет. Список: /artists`);
+    return;
+  }
+
+  artist.bio = bio.trim();
+  const result = await saveAndPublish(catalog, `update: описание художника ${artist.name} (из Telegram)`);
+  await say(chatId, `📝 Описание «<b>${esc(artist.name)}</b>» обновлено:\n\n${esc(artist.bio)}` + publishNote(result));
+}
+
+async function editArtistPhoto(chatId, input, fileId) {
+  const catalog = await readCatalog();
+  const artist = findArtist(catalog, input);
+  if (!artist) {
+    await say(chatId, `❌ Художника «${esc(input)}» нет. Список: /artists`);
+    return;
+  }
+
+  const photo = await downloadTelegramFile(fileId);
+  const imagePath = `images/artists/${slugifyArtist(artist.name)}.${photo.ext}`;
+  artist.photoUrl = `${imagePath}?v=${Date.now()}`;
+
+  const result = await saveAndPublish(catalog, `update: фото художника ${artist.name} (из Telegram)`, {
+    path: imagePath,
+    base64: photo.base64
+  });
+  await say(chatId, `📷 Фото «<b>${esc(artist.name)}</b>» обновлено.` + publishNote(result));
+}
+
+async function cmdArtistDeleteAsk(chatId, input) {
+  if (!input) {
+    await say(chatId, 'Нужна фамилия: <code>/artist_del Волкова</code>. Список: /artists');
+    return;
+  }
+
+  const catalog = await readCatalog();
+  const artist = findArtist(catalog, input);
+  if (!artist) {
+    await say(chatId, `❌ Художника «${esc(input)}» нет. Список: /artists`);
+    return;
+  }
+
+  const paintings = catalog.paintings.filter(p => p.artistLabel === artist.name);
+  if (paintings.length) {
+    await say(chatId,
+      `❌ У «${esc(artist.name)}» в галерее ${paintings.length} картин — удалять нельзя, иначе они останутся без автора.\n\n` +
+      paintings.map(p => `<code>${p.id}</code> ${esc(p.title)}`).join('\n') +
+      `\n\nСначала переведи их на другого художника (<code>/artist ${paintings[0].id} Фамилия</code>) или удали (<code>/del ${paintings[0].id}</code>).`);
+    return;
+  }
+
+  await say(chatId, `Удалить художника «<b>${esc(artist.name)}</b>» из галереи?\n\nКартин у него нет, так что каталог не пострадает.`, {
+    reply_markup: {
+      inline_keyboard: [[
+        { text: '🗑 Удалить', callback_data: `artdel:${slugifyArtist(artist.name)}` },
+        { text: 'Отмена', callback_data: 'cancel' }
+      ]]
+    }
+  });
+}
+
+async function artistDeleteConfirm(chatId, slug) {
+  const catalog = await readCatalog();
+  const artist = (catalog.artists || []).find(a => slugifyArtist(a.name) === slug);
+  if (!artist) {
+    await say(chatId, '❌ Художника уже нет.');
+    return;
+  }
+
+  catalog.artists = catalog.artists.filter(a => a !== artist);
+  const result = await saveAndPublish(catalog, `update: удалён художник ${artist.name} (из Telegram)`);
+  await say(chatId, `🗑 Художник «${esc(artist.name)}» удалён.` + publishNote(result));
+}
+
+// Разбирает ответ на вопрос бота и применяет правку.
+async function applyTask(chatId, task, message, text) {
+  const separator = task.indexOf(':');
+  const kind = separator === -1 ? task : task.slice(0, separator);
+  const target = separator === -1 ? '' : task.slice(separator + 1);
+  const photoId = extractPhotoId(message);
+  const skipped = /^(пропустить|нет|-)$/i.test(String(text || '').trim());
+
+  const needsPhoto = kind === 'photo' || kind === 'artistphoto';
+  if (needsPhoto && !photoId) {
+    if (skipped) {
+      await say(chatId, 'Хорошо, фото пропустили.');
+      return;
+    }
+    await say(chatId, '❌ Жду именно фото — прикрепи картинку ответом на то сообщение.');
+    return;
+  }
+  if (!needsPhoto && !text) {
+    await say(chatId, '❌ Жду текст ответом на то сообщение.');
+    return;
+  }
+
+  switch (kind) {
+    case 'title':
+      await editPaintingText(chatId, target, 'title', text);
+      break;
+    case 'desc':
+      await editPaintingText(chatId, target, 'description', text);
+      break;
+    case 'photo':
+      await editPaintingPhoto(chatId, target, photoId);
+      break;
+    case 'paintingartist':
+      await editPaintingArtist(chatId, target, text);
+      break;
+    case 'artistname':
+      await askFor(chatId, `artistbio:new:${text.trim()}`, `Художник: ${text.trim()}\n\nТеперь пришли описание — пара предложений о нём`, 'Пейзажист, пишет море...');
+      break;
+    case 'artistbio':
+      if (target.startsWith('new:')) await addArtist(chatId, target.slice(4), text);
+      else await editArtistBio(chatId, target, text);
+      break;
+    case 'artistphoto':
+      await editArtistPhoto(chatId, target, photoId);
+      break;
+    default:
+      await say(chatId, '❌ Не понял, что правим. Начни заново: /help');
+  }
+}
+
 // ---------- Быстрый режим: фото с подписью из пяти строк ----------
 
 const QUICK_FORMAT =
@@ -712,8 +995,9 @@ async function quickAdd(chatId, message) {
   await say(chatId,
     `✅ Добавлена картина <b>${esc(title)}</b> — номер <code>${result.id}</code>.\n` +
     `${esc(result.label)}, ${size.width}×${size.height} см, ${formatPrice(price)}` +
-    publishNote(result.publish) +
-    (result.isNewArtist ? `\n\n⚠️ Художник «${esc(result.label)}» новый — карточки в разделе «Художники» у него пока нет.` : ''));
+    publishNote(result.publish));
+
+  if (result.isNewArtist) await offerArtistCard(chatId, result.label);
 }
 
 // ---------- Точка входа ----------
@@ -772,6 +1056,13 @@ async function handleMessage(message, adminId) {
 
   if (!isAdmin) return;
 
+  // Ответ на вопрос о правке одного поля («новое название», «новое фото»...)
+  const task = taskFromMessage(message.reply_to_message);
+  if (task) {
+    await applyTask(chatId, task, message, text);
+    return;
+  }
+
   // Ответ на сообщение-черновик — очередной шаг мастера.
   const repliedText = message.reply_to_message?.text;
   if (isDraftMessage(repliedText)) {
@@ -813,6 +1104,48 @@ async function handleMessage(message, adminId) {
       break;
     case '/del':
       await cmdDeleteAsk(chatId, args[0]);
+      break;
+
+    // правка картины: с текстом — сразу, без текста — бот спросит
+    case '/title':
+      if (!args[0]) await say(chatId, 'Нужен номер: <code>/title p03</code>. Номера — /list');
+      else if (args.length > 1) await editPaintingText(chatId, args[0], 'title', args.slice(1).join(' '));
+      else await askFor(chatId, `title:${args[0]}`, `Новое название для ${args[0]} — пришли ответом`, 'Название картины');
+      break;
+    case '/desc':
+      if (!args[0]) await say(chatId, 'Нужен номер: <code>/desc p03</code>. Номера — /list');
+      else if (args.length > 1) await editPaintingText(chatId, args[0], 'description', args.slice(1).join(' '));
+      else await askFor(chatId, `desc:${args[0]}`, `Новое описание для ${args[0]} — пришли ответом`, 'Одно-два предложения');
+      break;
+    case '/photo':
+      if (!args[0]) await say(chatId, 'Нужен номер: <code>/photo p03</code>. Номера — /list');
+      else await askFor(chatId, `photo:${args[0]}`, `Пришли новое фото для ${args[0]} ответом на это сообщение`, 'Прикрепи фото');
+      break;
+    case '/artist':
+      if (!args[0]) await say(chatId, 'Нужен номер и фамилия: <code>/artist p03 Волкова</code>');
+      else if (args.length > 1) await editPaintingArtist(chatId, args[0], args.slice(1).join(' '));
+      else await askFor(chatId, `paintingartist:${args[0]}`, `Кто автор картины ${args[0]}? Пришли фамилию ответом`, 'Фамилия художника');
+      break;
+
+    // художники
+    case '/artists':
+      await cmdArtists(chatId);
+      break;
+    case '/artist_add':
+      if (args.length) await askFor(chatId, `artistbio:new:${args.join(' ')}`, `Художник: ${args.join(' ')}\n\nПришли описание — пара предложений о нём`, 'Пейзажист, пишет море...');
+      else await askFor(chatId, 'artistname', 'Как зовут художника? Пришли имя и фамилию ответом', 'Елена Волкова');
+      break;
+    case '/artist_bio':
+      if (!args[0]) await say(chatId, 'Нужна фамилия: <code>/artist_bio Волкова</code>. Список — /artists');
+      else if (args.length > 1) await editArtistBio(chatId, args[0], args.slice(1).join(' '));
+      else await askFor(chatId, `artistbio:${args[0]}`, `Новое описание для «${args[0]}» — пришли ответом`, 'Пара предложений');
+      break;
+    case '/artist_photo':
+      if (!args[0]) await say(chatId, 'Нужна фамилия: <code>/artist_photo Волкова</code>. Список — /artists');
+      else await askFor(chatId, `artistphoto:${args[0]}`, `Пришли фото художника «${args[0]}» ответом на это сообщение`, 'Прикрепи фото');
+      break;
+    case '/artist_del':
+      await cmdArtistDeleteAsk(chatId, args.join(' '));
       break;
     default:
       // Любое другое сообщение от хозяйки — показываем, что бот жив, и что он умеет
@@ -876,6 +1209,22 @@ async function handleCallback(callback, adminId) {
       message_id: callback.message.message_id,
       text: 'Отменено — ничего не изменилось.'
     }).catch(() => {});
+    return;
+  }
+
+  if (data.startsWith('artdel:')) {
+    await tg('editMessageReplyMarkup', {
+      chat_id: chatId,
+      message_id: callback.message.message_id,
+      reply_markup: { inline_keyboard: [] }
+    }).catch(() => {});
+    await artistDeleteConfirm(chatId, data.slice(7));
+    return;
+  }
+
+  if (data.startsWith('newartist:')) {
+    await askFor(chatId, `artistbio:new:${data.slice(10)}`,
+      `Художник: ${data.slice(10)}\n\nПришли описание — пара предложений о нём`, 'Пейзажист, пишет море...');
     return;
   }
 
